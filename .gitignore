@@ -1,0 +1,6 @@
+.cache
+*.pyc
+__pycache__
+.idea
+.coverage
+htmlcov
