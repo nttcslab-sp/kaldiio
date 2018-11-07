@@ -9,6 +9,7 @@ from .arkio import save_mat
 from .utils import open_like_kaldi
 from kaldiio.highlevel import parse_specifier
 from kaldiio.highlevel import WriteHelper
+from kaldiio.highlevel import ReadHelper
 
 try:
     __version__ = pkg_resources.get_distribution('kaldiio').version
