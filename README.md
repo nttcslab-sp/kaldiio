@@ -1,18 +1,42 @@
 # Kaldiio
-A pure python moudle for reading and writing kaldi ark files
-
+A pure python module for reading and writing kaldi ark files
 
 ## Dependencies
 
     numpy
     scipy
     six
+    Python2.7, Python3.5, Python3.6
+
+## Features
+The followings are supported.
+
+- Read/Write for archive formats: ark, scp
+- Binary/Text - Float/Double Matrix: DM, FM
+- Binary/Text - Float/Double Vector: DV, FV
+- Compressed Matrix for loading: CM1, CM2, CM3
+- Read/Write via a pipe: e.g. "ark: cat feats.ark |"
+- Loading wav.scp
+
+The followings are not **supported**
+
+- Compressed Matrix for writing
+- NNet2/NNet3 egs
+- Lattice file
+
+
+## Install 
+
+```bash
+pip install git+https://github.com/nttcslab-sp/kaldiio
+```
+
 
 ## Usage
 ### Basic
 
 ```python
-import kaldio
+import kaldiio
 
 d = kaldiio.load_ark('a.ark')  # d is a generator object
 for key, array in d:
@@ -21,7 +45,7 @@ for key, array in d:
 # === load_scp can load ark file as lazy dict
 d = kaldiio.load_scp('a.scp')
 for key in d:
-    d[key]
+    array = d[key]
 
 # === Create ark file from numpy
 kaldiio.save_ark('b.ark', {'key': array, 'key2': array2})
@@ -70,7 +94,7 @@ with open_like_kaldi('-', 'w') as f:
 For example, there are gziped alignment file, how to open it:
 ```python
 from kaldiio import open_like_kaldi, load_ark
-with open_like_kaldi('gzip -c exp/tri3_ali/ali.*.gz |', 'rb') as f:
+with open_like_kaldi('gunzip -c exp/tri3_ali/ali.*.gz |', 'rb') as f:
     # Alignment format equals ark of IntVector
     g = load_ark(f)
     for k, array in g:
@@ -85,22 +109,25 @@ rspecifier = 'ark:gunzip -c file.ark.gz |'
 spec_dict = parse_specifier(rspecifier)
 # spec_dict = {'ark': 'gunzip -c file.ark.gz |'}
 
-for open_like_kaldi(spec_dict['ark'], 'rb') as fark:
+with open_like_kaldi(spec_dict['ark'], 'rb') as fark:
     for key, array in load_ark(fark):
         ...
 ```
 
-### WriteHelper
-This is a high level module for writing in the similar style to Kaldi.
+## Highlevel wrapper
 
+### WriteHelper
 ```python
 import numpy
 from kaldiio import WriteHelper
-wspecifier = 'ark,scp:file.ark,file.scp'
-# You can also use pipe form
-# wspecifier = 'ark:| gzip -c > file.gz'
-
-with WriteHelper(wspecifier) as writer:
+with WriteHelper('ark,scp:file.ark,file.scp') as writer:
     for i in range(10):
         writer(str(i), numpy.random.randn(10, 10))
+```
+
+### ReadHelper
+```python
+from kaldiio import ReadHelper
+for key, array in ReadHelper('ark: gunzip -c file.ark.gz |'):
+    ...
 ```
