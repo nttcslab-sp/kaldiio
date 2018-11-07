@@ -1,6 +1,6 @@
 from collections.__init__ import OrderedDict
 
-from kaldiio.arkio import save_ark
+from kaldiio.arkio import save_ark, load_scp, load_ark
 from kaldiio.utils import open_like_kaldi
 
 
@@ -105,6 +105,105 @@ class WriteHelper(object):
         self.fark.close()
         if self.fscp is not None:
             self.fscp.close()
+
+
+class ReadHelper(object):
+    """
+
+    >>> import numpy
+    >>> array_in = numpy.random.randn(10, 10)
+    >>> save_ark('feats.ark', {'foo': array_in}, scp='feats.scp')
+    >>> helper = ReadHelper('ark:cat feats.ark |')
+    >>> for uttid, array_out in helper:
+    ...     assert uttid == 'foo'
+    ...     numpy.testing.assert_array_equal(array_in, array_out)
+    >>> helper = ReadHelper('scp:feats.scp')
+    >>> for uttid, array_out in helper:
+    ...     assert uttid == 'foo'
+    ...     numpy.testing.assert_array_equal(array_in, array_out)
+
+    """
+    def __init__(self, wspecifier):
+        spec_dict = parse_specifier(wspecifier)
+        if len(spec_dict) != 1:
+            raise RuntimeError('Specify one of scp or ark in rspecifier')
+
+        if 'scp' in spec_dict:
+            self.scp = True
+            mode = 'r'
+        else:
+            self.scp = False
+            mode = 'rb'
+
+        if self.scp:
+            with open_like_kaldi(next(iter(spec_dict.values())), mode) as f:
+                self.dict = load_scp(f)
+            self.file = None
+        else:
+            self.dict = None
+            self.file = open_like_kaldi(next(iter(spec_dict.values())), mode)
+        self.closed = False
+
+    def __iter__(self):
+        if self.scp:
+            for k, v in self.dict.items():
+                yield k, v
+        else:
+            with self.file as f:
+                for k, v in load_ark(f):
+                    yield k, v
+            self.closed = True
+
+    def __len__(self):
+        if not self.scp:
+            raise RuntimeError('__getitem__() is supported only when scp mode')
+        return len(self.dict)
+
+    def __contains__(self, item):
+        if not self.scp:
+            raise RuntimeError(
+                '__contains__() is supported only when scp mode')
+        return item in self.dict
+
+    def __getitem__(self, item):
+        if not self.scp:
+            raise RuntimeError('__getitem__() is supported only when scp mode')
+        return self.dict[item]
+
+    def get(self, item, default=None):
+        if not self.scp:
+            raise RuntimeError('get() is supported only when scp mode')
+        return self.dict.get(item, default)
+
+    def keys(self):
+        if not self.scp:
+            raise RuntimeError('keys() is supported only when scp mode')
+        return self.dict.keys()
+
+    def items(self):
+        if not self.scp:
+            raise RuntimeError('items() is supported only when scp mode')
+        return self.dict.items()
+
+    def values(self):
+        if not self.scp:
+            raise RuntimeError('values() is supported only when scp mode')
+        return self.dict.values()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if not self.scp and not self.closed:
+            self.file.close()
+
+    def __del__(self):
+        if not self.scp and not self.closed:
+            self.close()
+
+    def close(self):
+        if not self.scp and not self.closed:
+            self.file.close()
 
 
 if __name__ == '__main__':
