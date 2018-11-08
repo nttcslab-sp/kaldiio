@@ -1,9 +1,9 @@
+from contextlib import contextmanager
 import io
+from io import TextIOBase
 import os
 import subprocess
 import sys
-from contextlib import contextmanager
-from io import TextIOBase
 
 from six import string_types
 
@@ -59,7 +59,8 @@ else:
 class _wrap_close(object):
     """Originated from python os module
 
-    A proxy for a file whose close waits for the process"""
+    A proxy for a file whose close waits for the process
+    """
     def __init__(self, stream, proc):
         self._stream = stream
         self._proc = proc

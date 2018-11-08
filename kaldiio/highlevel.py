@@ -1,11 +1,13 @@
 from collections import OrderedDict
 
-from .arkio import save_ark, load_scp, load_ark
+from .arkio import load_ark
+from .arkio import load_scp
+from .arkio import save_ark
 from .utils import open_like_kaldi
 
 
 def parse_specifier(specifier):
-    """
+    """A utility to parse "specifier"
 
     Args:
         specifier (str):
@@ -57,7 +59,7 @@ def parse_specifier(specifier):
 
 
 class WriteHelper(object):
-    """
+    """A heghlevel interface to write ark or/and scp
 
     >>> helper = WriteHelper('ark,scp:a.ark,b.ark')
     >>> helper('uttid', array)
@@ -108,7 +110,7 @@ class WriteHelper(object):
 
 
 class ReadHelper(object):
-    """
+    """A highlevel interface to load ark or scp
 
     >>> import numpy
     >>> array_in = numpy.random.randn(10, 10)

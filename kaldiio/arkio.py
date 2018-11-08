@@ -1,14 +1,14 @@
-# -*- coding: utf-8 -*-
-from collections import MutableMapping, Mapping
+from collections import Mapping
+from collections import MutableMapping
 from contextlib import contextmanager
 from functools import partial
 from io import TextIOBase
 import os
 import re
+import scipy.io.wavfile as wavfile
 import struct
 import sys
 import wave
-import scipy.io.wavfile as wavfile
 
 import numpy as np
 from six import binary_type
@@ -118,11 +118,10 @@ def _load_wav_scp(fname, separator=' ', dtype='int', return_rate=True):
 
 
 class SegmentsExtractor(Mapping):
-    """
-    Emulate the following,
-    
+    """Emulate the following,
+
     https://github.com/kaldi-asr/kaldi/blob/master/src/featbin/extract-segments.cc
-    
+
     Args:
         segments (str): The file format is
             "<segment-id> <recording-id> <start-time> <end-time>\n"
@@ -523,10 +522,11 @@ class PerColHeader(object):
         ma3 = array > 192
         ma2 = ~ma1 * ~ma3  # 192 >= array > 64
 
-        array[ma1] = p0 + (self.p25 - p0) * array.compress(ma1) * (1/64.0)
-        array[ma2] = p25 + (p75 - p25) * (array.compress(ma2) - 64) * (1/128.0)
+        array[ma1] = p0 + (self.p25 - p0) * array.compress(ma1) * (1 / 64.0)
+        array[ma2] = \
+            p25 + (p75 - p25) * (array.compress(ma2) - 64) * (1 / 128.0)
         array[ma3] =\
-            p75 + (p100 - p75) * (array.compress(ma3) - 192) * (1/63.0)
+            p75 + (p100 - p75) * (array.compress(ma3) - 192) * (1 / 63.0)
 
 
 def read_ascii_mat(fd, return_size=False):
@@ -651,7 +651,7 @@ def save_ark(ark, array_dict, scp=None,
         try:
             ark.tell()
             seekable = True
-        except:
+        except Exception:
             seekable = False
 
     if scp is not None and not isinstance(ark, string_types):
