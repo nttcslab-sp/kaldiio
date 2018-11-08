@@ -1,7 +1,7 @@
-from collections.__init__ import OrderedDict
+from collections import OrderedDict
 
-from kaldiio.arkio import save_ark, load_scp, load_ark
-from kaldiio.utils import open_like_kaldi
+from .arkio import save_ark, load_scp, load_ark
+from .utils import open_like_kaldi
 
 
 def parse_specifier(specifier):
