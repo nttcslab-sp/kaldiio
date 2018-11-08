@@ -220,7 +220,7 @@ def _loader_wav(wav_name, return_rate=True, dtype='int'):
             else:
                 raise ValueError('bytes_per_sample must be 2 or 4')
             data = wd.readframes(wd.getnframes())
-            array = np.fromstring(data, dtype=np.dtype(dtype))
+            array = np.frombuffer(data, dtype=np.dtype(dtype))
             if nchannels > 1:
                 array = array.reshape(-1, nchannels)
             wd.close()
