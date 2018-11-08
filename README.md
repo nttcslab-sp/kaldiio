@@ -1,4 +1,6 @@
 # Kaldiio
+[![Build Status](https://travis-ci.com/nttcslab-sp/kaldiio.svg?branch=master)](https://travis-ci.com/nttcslab-sp/kaldiio)
+
 A pure python module for reading and writing kaldi ark files
 
 ## Dependencies
