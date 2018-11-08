@@ -1,9 +1,9 @@
+from contextlib import contextmanager
 import io
+from io import TextIOBase
 import os
 import subprocess
 import sys
-from contextlib import contextmanager
-from io import TextIOBase
 
 from six import string_types
 
@@ -13,9 +13,9 @@ PY3 = sys.version_info[0] == 3
 if PY3:
     def my_popen(cmd, mode='r', buffering=-1):
         """Originated from python os module
-        
+
         Extend for supporting mode == 'rb' and 'wb'
-        
+
         Args:
             cmd (str):
             mode (str):
@@ -58,8 +58,9 @@ else:
 
 class _wrap_close(object):
     """Originated from python os module
-    
-    A proxy for a file whose close waits for the process"""
+
+    A proxy for a file whose close waits for the process
+    """
     def __init__(self, stream, proc):
         self._stream = stream
         self._proc = proc
@@ -123,4 +124,3 @@ def open_like_kaldi(name, mode='r'):
             return _stdstream_wrap(sys.stdout)
     else:
         return open(name, mode)
-

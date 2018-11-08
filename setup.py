@@ -13,5 +13,5 @@ setup(name='kaldiio',
       packages=['kaldiio'],
       install_requires=['six', 'scipy'],
       setup_requires=['pytest-runner', 'numpy'],
-      tests_require=['pytest-cov', 'pytest-html', 'pytest']
+      tests_require=['pytest']
       )
