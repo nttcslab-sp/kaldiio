@@ -35,7 +35,7 @@ def parse_specifier(specifier):
     files = list((map(lambda x: x.strip(), files.split(','))))
     for x in set(types):
         if types.count(x) > 1:
-            raise ValueError(f'{x} is duplicated.')
+            raise ValueError('{} is duplicated.'.format(x))
 
     supported = [{'ark'}, {'scp'}, {'ark', 'scp'},
                  {'ark', 't'}, {'scp', 'ark', 't'}]
