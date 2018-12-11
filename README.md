@@ -83,6 +83,12 @@ for key in d:
     rate, array = d[key]
 ```
 
+#### load_mat
+```python
+array = kaldiio.load_mat('a.mat')
+array = kaldiio.load_mat('a.ark:1134')  # Seek and load
+```
+
 #### save_ark
 ```python
 
@@ -109,7 +115,10 @@ with open_like_kaldi('| gzip a.ark.gz', 'w') as f:
     kaldiio.save_ark(f, {'key': array})
     kaldiio.save_ark(f, {'key2': array2})
 ```
-
+#### save_mat
+```python
+array = kaldiio.save_mat('a.mat', array)
+```
 
 ## Utility
 ### open_like_kaldi
