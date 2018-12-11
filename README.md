@@ -53,7 +53,7 @@ with open('a.ark') as fd:
 
 # === Use with open_like_kaldi
 from kaldiio import open_like_kaldi
-with open_like_kaldi('ark: gunzip -c file.ark.gz |', 'r') as f:
+with open_like_kaldi('gunzip -c file.ark.gz |', 'r') as f:
     for key, array in kaldiio.load_ark(fd):
         ...
 ```
