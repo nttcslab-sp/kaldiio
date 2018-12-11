@@ -81,7 +81,7 @@ def load_scp(fname, endian='<', separator=' ', as_bytes=False):
         separator (str):
         as_bytes (bool): Read as raw bytes string
     """
-    loader = LazyLoader(partial(_loader, endian=endian, as_bytes=as_bytes))
+    loader = LazyLoader(partial(load_mat, endian=endian, as_bytes=as_bytes))
     with _open_or_fd(fname, 'r') as fd:
         for line in fd:
             try:
@@ -167,7 +167,7 @@ class SegmentsExtractor(Mapping):
             return rate, array[int(st * rate):]
 
 
-def _loader(ark_name, endian, as_bytes=False):
+def load_mat(ark_name, endian='<', as_bytes=False):
     slices = None
     if ':' in ark_name:
         fname, offset = ark_name.split(':', 1)
@@ -326,11 +326,6 @@ def read_token(fd):
     if len(token) == 0:  # End of file
         return None
     return ''.join(token)
-
-
-def load_mat(fname, endian='<'):
-    with _open_or_fd(fname, 'rb') as fd:
-        return read_kaldi(fd, endian)
 
 
 def read_kaldi(fd, endian='<', return_size=False):
