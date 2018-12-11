@@ -38,17 +38,53 @@ pip install git+https://github.com/nttcslab-sp/kaldiio
 ## Usage
 ### Basic
 
+#### load_ark
 ```python
 import kaldiio
 
 d = kaldiio.load_ark('a.ark')  # d is a generator object
 for key, array in d:
     ...
+    
+# === load_ark can accepts file descriptor, too
+with open('a.ark') as fd:
+    for key, array in kaldiio.load_ark(fd):
+        ...
 
-# === load_scp can load ark file as lazy dict
+# === Use with open_like_kaldi
+from kaldiio import open_like_kaldi
+with open_like_kaldi('ark: gunzip -c file.ark.gz |', 'r') as f:
+    for key, array in kaldiio.load_ark(fd):
+        ...
+```
+
+This function can load both matrices of ark and vectors of ark and also, it can be both text and binary.
+
+#### load_scp
+```python
+# === load_scp can load as lazy dict
 d = kaldiio.load_scp('a.scp')
 for key in d:
     array = d[key]
+    
+with open('a.scp') as fd:
+    kaldiio.load_scp(fd)
+```
+
+#### load_wav_scp
+```python
+d = kaldiio.load_wav_scp('wav.scp')
+for key in d:
+    rate, array = d[key]
+    
+# Supporting "segments"
+d = kaldiio.load_wav_scp('wav.scp', segments='segments')
+for key in d:
+    rate, array = d[key]
+```
+
+#### save_ark
+```python
 
 # === Create ark file from numpy
 kaldiio.save_ark('b.ark', {'key': array, 'key2': array2})
@@ -56,22 +92,24 @@ kaldiio.save_ark('b.ark', {'key': array, 'key2': array2})
 kaldiio.save_ark('b.ark', {'key': array, 'key2': array2},
                  scp='b.scp')
 
-# === load_ark and load_scp can accepts file descriptor, too
-with open('a.ark') as fd:
-    kaldiio.load_ark(fd)
-with open('a.scp') as fd:
-    kaldiio.load_scp(fd)
-
 # === Writes arrays to sys.stdout
 import sys
 kaldiio.save_ark(sys.stdout, {'key': array})
 
 # === Writes arrays for each keys
 # generate a.ark
-kaldiio.save_ark('a.ark', {'key': array})
+kaldiio.save_ark('a.ark', {'key': array, 'key2': array2})
 # After here, a.ark is opened with 'a' (append) mode.
-kaldiio.save_ark('a.ark', {'key2': array2}, append=True)
+kaldiio.save_ark('a.ark', {'key3': array3}, append=True)
+
+
+# === Use with open_like_kaldi
+from kaldiio import open_like_kaldi
+with open_like_kaldi('| gzip a.ark.gz', 'w') as f:
+    kaldiio.save_ark(f, {'key': array})
+    kaldiio.save_ark(f, {'key2': array2})
 ```
+
 
 ## Utility
 ### open_like_kaldi
