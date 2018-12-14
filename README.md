@@ -15,9 +15,9 @@ A pure python module for reading and writing kaldi ark files
 The followings are supported.
 
 - Read/Write for archive formats: ark, scp
-- Binary/Text - Float/Double Matrix: DM, FM
-- Binary/Text - Float/Double Vector: DV, FV
-- Compressed Matrix for loading: CM1, CM2, CM3
+  - Binary/Text - Float/Double Matrix: DM, FM
+  - Binary/Text - Float/Double Vector: DV, FV
+  - Compressed Matrix for loading: CM1, CM2, CM3
 - Read/Write via a pipe: e.g. "ark: cat feats.ark |"
 - Loading wav.scp
 
