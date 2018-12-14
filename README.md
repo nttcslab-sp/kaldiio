@@ -21,7 +21,7 @@ The followings are supported.
 - Read/Write via a pipe: e.g. "ark: cat feats.ark |"
 - Loading wav.scp
 
-The followings are not **supported**
+The followings are **not supported**
 
 - Compressed Matrix for writing
 - NNet2/NNet3 egs
@@ -36,9 +36,25 @@ pip install git+https://github.com/nttcslab-sp/kaldiio
 
 
 ## Usage
-### Basic
+### WriteHelper
+```python
+import numpy
+from kaldiio import WriteHelper
+with WriteHelper('ark,scp:file.ark,file.scp') as writer:
+    for i in range(10):
+        writer(str(i), numpy.random.randn(10, 10))
+```
 
-#### load_ark
+### ReadHelper
+```python
+from kaldiio import ReadHelper
+for key, array in ReadHelper('ark: gunzip -c file.ark.gz |'):
+    ...
+```
+
+## More low level API
+
+### load_ark
 ```python
 import kaldiio
 
@@ -60,7 +76,7 @@ with open_like_kaldi('gunzip -c file.ark.gz |', 'r') as f:
 
 This function can load both matrices of ark and vectors of ark and also, it can be both text and binary.
 
-#### load_scp
+### load_scp
 ```python
 # === load_scp can load as lazy dict
 d = kaldiio.load_scp('a.scp')
@@ -71,7 +87,7 @@ with open('a.scp') as fd:
     kaldiio.load_scp(fd)
 ```
 
-#### load_wav_scp
+### load_wav_scp
 ```python
 d = kaldiio.load_wav_scp('wav.scp')
 for key in d:
@@ -83,13 +99,13 @@ for key in d:
     rate, array = d[key]
 ```
 
-#### load_mat
+### load_mat
 ```python
 array = kaldiio.load_mat('a.mat')
 array = kaldiio.load_mat('a.ark:1134')  # Seek and load
 ```
 
-#### save_ark
+### save_ark
 ```python
 
 # === Create ark file from numpy
@@ -115,12 +131,11 @@ with open_like_kaldi('| gzip a.ark.gz', 'w') as f:
     kaldiio.save_ark(f, {'key': array})
     kaldiio.save_ark(f, {'key2': array2})
 ```
-#### save_mat
+### save_mat
 ```python
 array = kaldiio.save_mat('a.mat', array)
 ```
 
-## Utility
 ### open_like_kaldi
 
 ``kaldiio.open_like_kaldi`` maybe a useful tool if you are familiar with Kaldi. This functions can performs as following,
@@ -151,7 +166,7 @@ with open_like_kaldi('gunzip -c exp/tri3_ali/ali.*.gz |', 'rb') as f:
         ...
 ```
 
-## parse_specifier
+### parse_specifier
 
 ```python
 from kaldiio import parse_specifier, open_like_kaldi, load_ark
@@ -162,22 +177,4 @@ spec_dict = parse_specifier(rspecifier)
 with open_like_kaldi(spec_dict['ark'], 'rb') as fark:
     for key, array in load_ark(fark):
         ...
-```
-
-## Highlevel wrapper
-
-### WriteHelper
-```python
-import numpy
-from kaldiio import WriteHelper
-with WriteHelper('ark,scp:file.ark,file.scp') as writer:
-    for i in range(10):
-        writer(str(i), numpy.random.randn(10, 10))
-```
-
-### ReadHelper
-```python
-from kaldiio import ReadHelper
-for key, array in ReadHelper('ark: gunzip -c file.ark.gz |'):
-    ...
 ```
