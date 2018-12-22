@@ -18,15 +18,14 @@ The followings are supported.
   - Binary/Text - Float/Double Matrix: DM, FM
   - Binary/Text - Float/Double Vector: DV, FV
   - Compressed Matrix for loading: CM1, CM2, CM3
+- Compressed Matrix for writing: All compressoin_method are supported: 1,2,3,4,5,6,7
 - Read/Write via a pipe: e.g. "ark: cat feats.ark |"
 - Loading wav.scp
 
 The followings are **not supported**
 
-- Compressed Matrix for writing
 - NNet2/NNet3 egs
 - Lattice file
-
 
 ## Install 
 
@@ -37,6 +36,8 @@ pip install git+https://github.com/nttcslab-sp/kaldiio
 
 ## Usage
 ### WriteHelper
+- Write matrices in a ark with scp
+
 ```python
 import numpy
 from kaldiio import WriteHelper
@@ -45,12 +46,70 @@ with WriteHelper('ark,scp:file.ark,file.scp') as writer:
         writer(str(i), numpy.random.randn(10, 10))
 ```
 
+- Write matrices via gziped command
+
+```python
+import numpy
+from kaldiio import WriteHelper
+with WriteHelper('ark:file.ark', compression_method=2) as writer:
+    for i in range(10):
+        writer(str(i), numpy.random.randn(10, 10))
+```
+
+- Write matrices in text
+
+```python
+import numpy
+from kaldiio import WriteHelper
+with WriteHelper('ark,t:file.ark') as writer:
+    for i in range(10):
+        writer(str(i), numpy.random.randn(10, 10))
+```
+
+- Write matrices via gziped command
+
+```python
+import numpy
+from kaldiio import WriteHelper
+with WriteHelper('ark:file.ark', compression_method=2) as writer:
+    for i in range(10):
+        writer(str(i), numpy.random.randn(10, 10))
+```
+
 ### ReadHelper
+- Read matrix-scp
+
+```python
+from kaldiio import ReadHelper
+for key, array in ReadHelper('scp:file.scp'):
+    ...
+```
+
+- Read gziped ark
+
 ```python
 from kaldiio import ReadHelper
 for key, array in ReadHelper('ark: gunzip -c file.ark.gz |'):
     ...
 ```
+
+- Read wav.scp
+
+```python
+from kaldiio import ReadHelper
+for key, array in ReadHelper('ark:wav.scp', wav=True):
+    ...
+```
+
+
+- Read wav.scp with segments
+
+```python
+from kaldiio import ReadHelper
+for key, array in ReadHelper('ark:wav.scp', wav=True, segments='segments'):
+    ...
+```
+
 
 ## More low level API
 
