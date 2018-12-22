@@ -1,10 +1,10 @@
 import numpy
 
-from kaldiio import load_ark
-from kaldiio import load_scp
-from kaldiio import save_ark
-from kaldiio import ReadHelper
-from kaldiio import WriteHelper
+from kaldiio.highlevel import ReadHelper
+from kaldiio.highlevel import WriteHelper
+from kaldiio.matio import load_ark
+from kaldiio.matio import load_scp
+from kaldiio.matio import save_ark
 
 
 def test_read_helper(tmpdir):

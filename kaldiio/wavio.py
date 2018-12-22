@@ -1,7 +1,6 @@
 import wave
 from functools import partial
 from io import BytesIO
-from typing import Mapping
 
 import numpy as np
 from scipy.io import wavfile as wavfile
@@ -10,6 +9,12 @@ from kaldiio.matio import LazyLoader
 from kaldiio.utils import convert_to_slice
 from kaldiio.utils import open_like_kaldi
 from kaldiio.utils import open_or_fd
+
+
+if PY3:
+    from collections.abc import Mapping
+else:
+    from collections import Mapping
 
 
 def load_wav_scp(fname,
