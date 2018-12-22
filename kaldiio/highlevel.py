@@ -1,9 +1,10 @@
 from collections import OrderedDict
 
-from .arkio import load_ark
-from .arkio import load_scp
-from .arkio import save_ark
-from .utils import open_like_kaldi
+from kaldiio.matio import load_ark
+from kaldiio.matio import load_scp
+from kaldiio.matio import save_ark
+from kaldiio.utils import open_like_kaldi
+from kaldiio.wavio import load_wav_scp
 
 
 def parse_specifier(specifier):
@@ -65,7 +66,8 @@ class WriteHelper(object):
     >>> helper('uttid', array)
 
     """
-    def __init__(self, wspecifier):
+    def __init__(self, wspecifier, compression_method=None):
+        self.compression_method = compression_method
         spec_dict = parse_specifier(wspecifier)
         if set(spec_dict) == {'scp'}:
             raise ValueError(
@@ -89,7 +91,11 @@ class WriteHelper(object):
     def __call__(self, key, array):
         if self.closed:
             raise RuntimeError('WriteHelper has been already closed')
-        save_ark(self.fark, {key: array}, scp=self.fscp, text=self.text)
+        save_ark(self.fark, {key: array}, scp=self.fscp, text=self.text,
+                 compression_method=self.compression_method)
+
+    def __setitem__(self, key, value):
+        self(key, value)
 
     def __enter__(self):
         return self
@@ -125,7 +131,7 @@ class ReadHelper(object):
     ...     numpy.testing.assert_array_equal(array_in, array_out)
 
     """
-    def __init__(self, wspecifier):
+    def __init__(self, wspecifier, wav=False, segments=None):
         spec_dict = parse_specifier(wspecifier)
         if len(spec_dict) != 1:
             raise RuntimeError('Specify one of scp or ark in rspecifier')
@@ -139,7 +145,10 @@ class ReadHelper(object):
 
         if self.scp:
             with open_like_kaldi(next(iter(spec_dict.values())), mode) as f:
-                self.dict = load_scp(f)
+                if wav:
+                    self.dict = load_wav_scp(f, segments=segments)
+                else:
+                    self.dict = load_scp(f)
             self.file = None
         else:
             self.dict = None
