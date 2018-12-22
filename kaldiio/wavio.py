@@ -1,6 +1,7 @@
-import wave
 from functools import partial
 from io import BytesIO
+import sys
+import wave
 
 import numpy as np
 from scipy.io import wavfile as wavfile
