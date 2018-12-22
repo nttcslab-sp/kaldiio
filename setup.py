@@ -3,7 +3,7 @@ import os.path
 from setuptools import setup
 
 setup(name='kaldiio',
-      version='2.8.0',
+      version='2.9.0',
       description='Kaldi-ark loading and writing module',
       author='Naoyuki Kamo',
       author_email='kamo_naoyuki_t7@lab.ntt.co.jp',
