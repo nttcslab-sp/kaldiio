@@ -91,7 +91,8 @@ class WriteHelper(object):
     def __call__(self, key, array):
         if self.closed:
             raise RuntimeError('WriteHelper has been already closed')
-        save_ark(self.fark, {key: array}, scp=self.fscp, text=self.text, compression_method=self.compression_method)
+        save_ark(self.fark, {key: array}, scp=self.fscp, text=self.text,
+                 compression_method=self.compression_method)
 
     def __setitem__(self, key, value):
         self(key, value)

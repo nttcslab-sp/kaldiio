@@ -1,4 +1,3 @@
-from collections.abc import MutableMapping
 from functools import partial
 import os
 import re
@@ -18,6 +17,11 @@ from kaldiio.utils import open_like_kaldi
 from kaldiio.utils import open_or_fd
 
 PY3 = sys.version_info[0] == 3
+
+if PY3:
+    from collections.abc import MutableMapping
+else:
+    from collections import MutableMapping
 
 
 def load_scp(fname, endian='<', separator=' ', as_bytes=False):
@@ -467,7 +471,9 @@ def write_array(fd, array, endian='<', compression_method=None):
     size += 2
     if compression_method is not None:
         if array.ndim != 2:
-            raise ValueError('array must be matrix if compression_method is not None: {}'.format(array.ndim))
+            raise ValueError(
+                'array must be matrix if compression_method is not None: {}'
+                .format(array.ndim))
 
         global_header = GlobalHeader.compute(array, compression_method)
         size += global_header.write(fd, endian)

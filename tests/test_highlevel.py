@@ -10,7 +10,8 @@ from kaldiio import WriteHelper
 def test_read_helper(tmpdir):
     path = tmpdir.strpath
     array_in = numpy.random.randn(10, 10)
-    save_ark('{}/feats.ark'.format(path), {'foo': array_in}, scp='{}/feats.scp'.format(path))
+    save_ark('{}/feats.ark'.format(path),
+             {'foo': array_in}, scp='{}/feats.scp'.format(path))
     helper = ReadHelper('ark:cat {}/feats.ark |'.format(path))
     for uttid, array_out in helper:
         assert uttid == 'foo'
@@ -39,7 +40,7 @@ def test_write_helper(tmpdir):
 def test_write_helper_ascii(tmpdir):
     path = tmpdir.strpath
     d = {'foo': numpy.random.randn(10, 10),
-         'bar': numpy.random.randn(10, 10),}
+         'bar': numpy.random.randn(10, 10)}
 
     with WriteHelper('ark,t,scp:{p}/out.ark, {p}/out.scp'.format(p=path)) as w:
         for k, v in d.items():
@@ -62,5 +63,3 @@ def _compare_allclose(d1, d2, rtol=1e-07, atol=0.):
     assert set(d1.keys()) == set(d2.keys())
     for key in d1:
        numpy.testing.assert_allclose(d1[key], d2[key], rtol, atol)
-
-
