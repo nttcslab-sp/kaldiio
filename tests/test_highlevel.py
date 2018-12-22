@@ -62,4 +62,4 @@ def _compare_allclose(d1, d2, rtol=1e-07, atol=0.):
     assert len(d1) != 0
     assert set(d1.keys()) == set(d2.keys())
     for key in d1:
-       numpy.testing.assert_allclose(d1[key], d2[key], rtol, atol)
+        numpy.testing.assert_allclose(d1[key], d2[key], rtol, atol)
