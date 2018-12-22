@@ -11,6 +11,8 @@ from kaldiio.utils import open_like_kaldi
 from kaldiio.utils import open_or_fd
 
 
+PY3 = sys.version_info[0] == 3
+
 if PY3:
     from collections.abc import Mapping
 else:
