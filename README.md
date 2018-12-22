@@ -66,12 +66,12 @@ with WriteHelper('ark,t:file.ark') as writer:
         writer(str(i), numpy.random.randn(10, 10))
 ```
 
-- Write matrices via gziped command
+- Write in gziped ark
 
 ```python
 import numpy
 from kaldiio import WriteHelper
-with WriteHelper('ark:file.ark', compression_method=2) as writer:
+with WriteHelper('ark:| gzip -c file.ark.gz') as writer:
     for i in range(10):
         writer(str(i), numpy.random.randn(10, 10))
 ```
