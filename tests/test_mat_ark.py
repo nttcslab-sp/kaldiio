@@ -63,7 +63,7 @@ def test_write_compressed_arks(tmpdir, compression_method):
     arkc = dict(kaldiio.load_ark(path))
     arkc_valid = dict(kaldiio.load_ark(
         os.path.join(os.path.dirname(__file__),
-        'arks', 'test.cm{}.ark'.format(compression_method))))
+                     'arks', 'test.cm{}.ark'.format(compression_method))))
     _compare_allclose(arkc, arkc_valid, atol=1e-1)
 
 

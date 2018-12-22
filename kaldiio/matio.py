@@ -438,7 +438,8 @@ def save_ark(ark, array_dict, scp=None,
                 if text:
                     size += write_array_ascii(fd, array_dict[key], endian)
                 else:
-                    size += write_array(fd, array_dict[key], endian, compression_method)
+                    size += write_array(fd, array_dict[key], endian,
+                                        compression_method)
 
     # Write scp
     mode = 'a' if append else 'w'
