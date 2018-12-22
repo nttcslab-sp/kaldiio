@@ -46,7 +46,7 @@ with WriteHelper('ark,scp:file.ark,file.scp') as writer:
         writer(str(i), numpy.random.randn(10, 10))
 ```
 
-- Write matrices via gziped command
+- Write in compressed matrix
 
 ```python
 import numpy
