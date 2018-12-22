@@ -1,14 +1,9 @@
-from collections import Mapping
-from collections import MutableMapping
-from contextlib import contextmanager
+from collections.abc import MutableMapping
 from functools import partial
-from io import TextIOBase
 import os
 import re
-import scipy.io.wavfile as wavfile
 import struct
 import sys
-import wave
 
 import numpy as np
 from six import binary_type
@@ -16,60 +11,13 @@ from six import BytesIO
 from six.moves import cStringIO as StringIO
 from six import string_types
 
-from .utils import open_like_kaldi
+from kaldiio.compression_header import GlobalHeader
+from kaldiio.compression_header import PerColHeader
+from kaldiio.utils import convert_to_slice, MultiFileDescriptor
+from kaldiio.utils import open_like_kaldi
+from kaldiio.utils import open_or_fd
 
 PY3 = sys.version_info[0] == 3
-
-
-class MultiFileDescriptor(object):
-    """What is this class?
-
-    First of all, I want to load all format kaldi files
-    only by using read_kaldi function, and I want to load it
-    from file and file descriptor including standard input stream.
-    To judge its file format it is required to make the
-    file descriptor read and seek(to return original position).
-    However, stdin is not seekable, so I create this clas.
-    This class joints multiple file descriptors
-    and I assume this class is used as follwoing,
-
-        >>> string = fd.read(size)
-        >>> # To check format from string
-        >>> _fd = StringIO(string)
-        >>> newfd = MultiFileDescriptor(_fd, fd)
-    """
-    def __init__(self, *fds):
-        self.fds = fds
-        self._current_idx = 0
-
-    def read(self, size):
-        if len(self.fds) <= self._current_idx:
-            return b''
-        string = self.fds[self._current_idx].read(size)
-        remain = size - len(string)
-        if remain > 0:
-            self._current_idx += 1
-            string2 = self.read(remain)
-            return string + string2
-        else:
-            return string
-
-
-@contextmanager
-def _open_or_fd(fname, mode):
-    # If fname is a file name
-    if isinstance(fname, string_types):
-        f = open(fname, mode)
-    # If fname is a file descriptor
-    else:
-        if PY3 and 'b' in mode and isinstance(fname, TextIOBase):
-            f = fname.buffer
-        else:
-            f = fname
-    yield f
-
-    if isinstance(fname, string_types):
-        f.close()
 
 
 def load_scp(fname, endian='<', separator=' ', as_bytes=False):
@@ -82,7 +30,7 @@ def load_scp(fname, endian='<', separator=' ', as_bytes=False):
         as_bytes (bool): Read as raw bytes string
     """
     loader = LazyLoader(partial(load_mat, endian=endian, as_bytes=as_bytes))
-    with _open_or_fd(fname, 'r') as fd:
+    with open_or_fd(fname, 'r') as fd:
         for line in fd:
             try:
                 token, arkname = line.split(separator, 1)
@@ -94,86 +42,13 @@ def load_scp(fname, endian='<', separator=' ', as_bytes=False):
     return loader
 
 
-def load_wav_scp(fname,
-                 segments=None,
-                 separator=' ', dtype='int', return_rate=True):
-    if segments is None:
-        return _load_wav_scp(fname, separator=separator, dtype=dtype,
-                             return_rate=return_rate)
-    else:
-        return SegmentsExtractor(fname, separator=separator, dtype=dtype,
-                                 return_rate=return_rate, segments=segments)
-
-
-def _load_wav_scp(fname, separator=' ', dtype='int', return_rate=True):
-    assert dtype in ['int', 'float'], 'int or float'
-    loader = LazyLoader(partial(_loader_wav,
-                                dtype=dtype,
-                                return_rate=return_rate))
-    with _open_or_fd(fname, 'r') as fd:
-        for line in fd:
-            token, wavname = line.split(separator, 1)
-            loader[token] = wavname
-    return loader
-
-
-class SegmentsExtractor(Mapping):
-    """Emulate the following,
-
-    https://github.com/kaldi-asr/kaldi/blob/master/src/featbin/extract-segments.cc
-
-    Args:
-        segments (str): The file format is
-            "<segment-id> <recording-id> <start-time> <end-time>\n"
-            "e.g. call-861225-A-0050-0065 call-861225-A 5.0 6.5\n"
-    """
-    def __init__(self, fname,
-                 segments=None, separator=' ', dtype='int', return_rate=True):
-        self.wav_scp = fname
-        self.wav_loader = _load_wav_scp(self.wav_scp, separator=separator,
-                                        dtype=dtype, return_rate=return_rate)
-
-        self.segments = segments
-        self._segments_dict = {}
-        with open(self.segments) as f:
-            for l in f:
-                sps = l.strip().split(' ')
-                if len(sps) != 4:
-                    raise RuntimeError('Format is invalid: {}'.format(l))
-                uttid, recodeid, st, et = sps
-                self._segments_dict[uttid] = (recodeid, float(st), float(et))
-
-                if recodeid not in self.wav_loader:
-                    raise RuntimeError(
-                        'Not found "{}" in {}'.format(recodeid, self.wav_scp))
-
-    def __iter__(self):
-        return iter(self._segments_dict)
-
-    def __contains__(self, item):
-        return item in self._segments_dict
-
-    def __len__(self):
-        return len(self._segments_dict)
-
-    def __getitem__(self, key):
-        recodeid, st, et = self._segments_dict[key]
-        rate, array = self.wav_loader[recodeid]
-        # Convert starting time of the segment to corresponding sample number.
-        # If end time is -1 then use the whole file starting from start time.
-        if et != -1:
-            return rate, array[int(st * rate):int(et * rate)]
-        else:
-            return rate, array[int(st * rate):]
-
-
 def load_mat(ark_name, endian='<', as_bytes=False):
     slices = None
     if ':' in ark_name:
         fname, offset = ark_name.split(':', 1)
         if '[' in offset and ']' in offset:
             offset, Range = offset.split('[')
-            slices = _convert_to_slice(Range.replace(']', '').strip())
+            slices = convert_to_slice(Range.replace(']', '').strip())
         offset = int(offset)
     else:
         fname = ark_name
@@ -189,57 +64,6 @@ def load_mat(ark_name, endian='<', as_bytes=False):
     if slices is not None:
         array = array[slices]
     return array
-
-
-def _loader_wav(wav_name, return_rate=True, dtype='int'):
-    assert dtype in ['int', 'float'], 'int or float'
-    slices = None
-    if ':' in wav_name:
-        fname, offset = wav_name.split(':', 1)
-        if '[' in offset and ']' in offset:
-            offset, Range = offset.split('[')
-            slices = _convert_to_slice(Range.replace(']', '').strip())
-        offset = int(offset)
-    else:
-        fname = wav_name
-        offset = None
-
-    try:
-        with open_like_kaldi(fname, 'rb') as fd:
-            if offset is not None:
-                fd.seek(offset)
-            wd = wave.open(fd)
-            assert isinstance(wd, wave.Wave_read)
-            rate = wd.getframerate()
-            nchannels = wd.getnchannels()
-            nbytes = wd.getsampwidth()
-            if nbytes == 2:
-                dtype = dtype + '16'
-            elif nbytes == 4:
-                dtype = dtype + '32'
-            else:
-                raise ValueError('bytes_per_sample must be 2 or 4')
-            data = wd.readframes(wd.getnframes())
-            array = np.frombuffer(data, dtype=np.dtype(dtype))
-            if nchannels > 1:
-                array = array.reshape(-1, nchannels)
-            wd.close()
-    # If wave error found, try scipy.wavfile
-    except wave.Error:
-        with open_like_kaldi(fname, 'rb') as fd:
-            if offset is not None:
-                fd.seek(offset)
-            # scipy.io.wavfile doesn't support streaming input
-            fd2 = BytesIO(fd.read())
-            rate, array = wavfile.read(fd2)
-            del fd2
-
-    if slices is not None:
-        array = array[slices]
-    if return_rate:
-        return rate, array
-    else:
-        return array
 
 
 class LazyLoader(MutableMapping):
@@ -276,25 +100,9 @@ class LazyLoader(MutableMapping):
         return item in self._dict
 
 
-def _convert_to_slice(string):
-    slices = []
-    for ele in string.split(','):
-        if ele == '' or ele == ':':
-            slices.append(slice(None))
-        else:
-            args = []
-            for _ele in ele.split(':'):
-                if _ele == '':
-                    args.append(None)
-                else:
-                    args.append(int(_ele))
-            slices.append(slice(*args))
-    return tuple(slices)
-
-
 def load_ark(fname, return_position=False, endian='<'):
     size = 0
-    with _open_or_fd(fname, 'rb') as fd:
+    with open_or_fd(fname, 'rb') as fd:
         while True:
             token = read_token(fd)
             if token is None:
@@ -349,7 +157,7 @@ def read_kaldi(fd, endian='<', return_size=False):
         if b'\0B\4' == head:  # This is int32Vector
             array, size = read_int32vector(fd, endian, return_size=True)
         else:
-            array, size = read_matrix_vector(fd, endian, return_size=True)
+            array, size = read_matrix_or_vector(fd, endian, return_size=True)
 
     if return_size:
         return array, size
@@ -371,7 +179,7 @@ def read_int32vector(fd, endian='<', return_size=False):
         return array
 
 
-def read_matrix_vector(fd, endian='<', return_size=False):
+def read_matrix_or_vector(fd, endian='<', return_size=False):
     """Call from load_kaldi_file
 
     Args:
@@ -389,20 +197,10 @@ def read_matrix_vector(fd, endian='<', return_size=False):
     # CompressedMatrix
     if 'CM' == Type:
         # Read GlobalHeader
-        global_header = GlobalHeader(fd, Type, endian)
-
-        # Read PerColHeader
-        size_of_percolheader = 8
-        buf = fd.read(size_of_percolheader * global_header.cols)
-        size += size_of_percolheader * global_header.cols
-        header_array = np.frombuffer(buf, dtype=np.dtype(endian + 'u2'))
-        header_array = np.asarray(header_array, np.float32)
-        # Decompress header
-        global_header.uint_to_float(header_array)
-
-        # Create PerColHeader obects
-        headers = [PerColHeader(_array[0], _array[1], _array[2], _array[3])
-                   for _array in header_array.reshape(-1, 4)]
+        global_header = GlobalHeader.read(fd, Type, endian)
+        size += global_header.size
+        per_col_header = PerColHeader.read(fd, global_header, endian)
+        size += per_col_header.size
 
         # Read data
         buf = fd.read(global_header.rows * global_header.cols)
@@ -412,13 +210,13 @@ def read_matrix_vector(fd, endian='<', return_size=False):
         array = np.asarray(array, np.float32)
 
         # Decompress
-        for icol, header in enumerate(headers):
-            header.char_to_float(array[icol])
+        array = per_col_header.char_to_float(array)
         array = array.T
 
     elif 'CM2' == Type:
         # Read GlobalHeader
-        global_header = GlobalHeader(fd, Type, endian)
+        global_header = GlobalHeader.read(fd, Type, endian)
+        size += global_header.size
 
         # Read matrix
         buf = fd.read(2 * global_header.rows * global_header.cols)
@@ -427,20 +225,21 @@ def read_matrix_vector(fd, endian='<', return_size=False):
         array = np.asarray(array, np.float32)
 
         # Decompress
-        global_header.uint_to_float(array)
+        array = global_header.uint_to_float(array)
 
     elif 'CM3' == Type:
         # Read GlobalHeader
-        global_header = GlobalHeader(fd, Type, endian)
+        global_header = GlobalHeader.read(fd, Type, endian)
+        size += global_header.size
 
         # Read matrix
         buf = fd.read(global_header.rows * global_header.cols)
         array = np.frombuffer(buf, dtype=np.dtype(endian + 'u1'))
         array = array.reshape((global_header.rows, global_header.cols))
-        array = np.asarray(array, np.float32)
+        array = array.astype(np.float32)
 
         # Decompress
-        global_header.uint_to_float(array)
+        array = global_header.uint_to_float(array)
 
     else:
         if Type == 'FM' or Type == 'FV':
@@ -479,49 +278,6 @@ def read_matrix_vector(fd, endian='<', return_size=False):
         return array, size
     else:
         return array
-
-
-class GlobalHeader(object):
-    """This is a imitation class of the structure "GlobalHeader" """
-    def __init__(self, fd, type='CM', endian='<'):
-        if type in ('CM', 'CM2'):
-            self.c = 1. / 65535.
-        elif type == 'CM3':
-            self.c = 1. / 255.
-        else:
-            raise RuntimeError('Not supported type={}'.format(type))
-
-        self.min_value = struct.unpack(endian + 'f', fd.read(4))[0]
-        self.range = struct.unpack(endian + 'f', fd.read(4))[0]
-        self.rows = struct.unpack(endian + 'i', fd.read(4))[0]
-        self.cols = struct.unpack(endian + 'i', fd.read(4))[0]
-        assert self.rows > 0
-        assert self.cols > 0
-
-    def uint_to_float(self, array):
-        array[:] = self.min_value + self.range * self.c * array
-
-
-class PerColHeader(object):
-    """This is a imitation class of the structure "PerColHeader" """
-    def __init__(self, p0, p25, p75, p100):
-        # p means percentile
-        self.p0 = p0
-        self.p25 = p25
-        self.p75 = p75
-        self.p100 = p100
-
-    def char_to_float(self, array):
-        p0, p25, p75, p100 = self.p0, self.p25, self.p75, self.p100
-        ma1 = array <= 64
-        ma3 = array > 192
-        ma2 = ~ma1 * ~ma3  # 192 >= array > 64
-
-        array[ma1] = p0 + (self.p25 - p0) * array.compress(ma1) * (1 / 64.0)
-        array[ma2] = \
-            p25 + (p75 - p25) * (array.compress(ma2) - 64) * (1 / 128.0)
-        array[ma3] =\
-            p75 + (p100 - p75) * (array.compress(ma3) - 192) * (1 / 63.0)
 
 
 def read_ascii_mat(fd, return_size=False):
@@ -567,7 +323,7 @@ def read_ascii_mat(fd, return_size=False):
                 ndmin = 2
             elif char == '':
                 raise ValueError(
-                    'There are no correspoding bracket \']\' with \'[\'')
+                    'There are no corresponding bracket \']\' with \'[\'')
         else:
             if char == os.linesep or char == '':
                 break
@@ -623,7 +379,8 @@ def _get_offset(line, separator=' ', endian='<', as_bytes=False):
 def save_ark(ark, array_dict, scp=None,
              append=False, text=False,
              as_bytes=False,
-             endian='<'):
+             endian='<',
+             compression_method=None):
     """Write ark
 
     Args:
@@ -636,6 +393,7 @@ def save_ark(ark, array_dict, scp=None,
         as_bytes (bool): Save the value of the input array_dict as just a
             bytes string.
         endian (str):
+        compression_method (int):
     """
     if isinstance(ark, string_types):
         seekable = True
@@ -658,7 +416,7 @@ def save_ark(ark, array_dict, scp=None,
     # Write ark
     mode = 'ab' if append else 'wb'
     pos_list = []
-    with _open_or_fd(ark, mode) as fd:
+    with open_or_fd(ark, mode) as fd:
         if seekable:
             offset = fd.tell()
         else:
@@ -676,24 +434,24 @@ def save_ark(ark, array_dict, scp=None,
                 if text:
                     size += write_array_ascii(fd, array_dict[key], endian)
                 else:
-                    size += write_array(fd, array_dict[key], endian)
+                    size += write_array(fd, array_dict[key], endian, compression_method)
 
     # Write scp
     mode = 'a' if append else 'w'
     if scp is not None:
         name = ark if isinstance(ark, string_types) else ark.name
-        with _open_or_fd(scp, mode) as fd:
+        with open_or_fd(scp, mode) as fd:
             for key, position in zip(array_dict, pos_list):
                 fd.write(key + ' ' + name + ':' +
                          str(position + offset) + os.linesep)
 
 
-def save_mat(fname, array, endian='<'):
-    with _open_or_fd(fname, 'rb') as fd:
-        return write_array(fd, array, endian)
+def save_mat(fname, array, endian='<', compression_method=None):
+    with open_or_fd(fname, 'rb') as fd:
+        return write_array(fd, array, endian, compression_method)
 
 
-def write_array(fd, array, endian='<'):
+def write_array(fd, array, endian='<', compression_method=None):
     """Write array
 
     Args:
@@ -707,7 +465,40 @@ def write_array(fd, array, endian='<'):
     assert isinstance(array, np.ndarray)
     fd.write(b'\0B')
     size += 2
-    if array.dtype == np.int32:
+    if compression_method is not None:
+        if array.ndim != 2:
+            raise ValueError('array must be matrix if compression_method is not None: {}'.format(array.ndim))
+
+        global_header = GlobalHeader.compute(array, compression_method)
+        size += global_header.write(fd, endian)
+        if global_header.type == 'CM':
+            per_col_header = PerColHeader.compute(array, global_header)
+            size += per_col_header.write(fd, global_header, endian)
+
+            array = per_col_header.float_to_char(array.T)
+            array = array.astype(np.dtype(endian + 'u1'))
+
+            byte_string = array.tobytes()
+            fd.write(byte_string)
+            size += len(byte_string)
+
+        elif global_header.type == 'CM2':
+            array = global_header.float_to_uint(array)
+            array = array.astype(np.dtype(endian + 'u2'))
+
+            byte_string = array.tobytes()
+            fd.write(byte_string)
+            size += len(byte_string)
+
+        elif global_header.type == 'CM3':
+            array = global_header.float_to_uint(array)
+            array = array.astype(np.dtype(endian + 'u1'))
+
+            byte_string = array.tobytes()
+            fd.write(byte_string)
+            size += len(byte_string)
+
+    elif array.dtype == np.int32:
         assert len(array.shape) == 1  # Must be vector
         fd.write(b'\4')
         fd.write(struct.pack(endian + 'i', len(array)))

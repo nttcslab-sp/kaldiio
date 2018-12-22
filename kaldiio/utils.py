@@ -124,3 +124,70 @@ def open_like_kaldi(name, mode='r'):
             return _stdstream_wrap(sys.stdout)
     else:
         return open(name, mode)
+
+
+@contextmanager
+def open_or_fd(fname, mode):
+    # If fname is a file name
+    if isinstance(fname, string_types):
+        f = open(fname, mode)
+    # If fname is a file descriptor
+    else:
+        if PY3 and 'b' in mode and isinstance(fname, TextIOBase):
+            f = fname.buffer
+        else:
+            f = fname
+    yield f
+
+    if isinstance(fname, string_types):
+        f.close()
+
+
+def convert_to_slice(string):
+    slices = []
+    for ele in string.split(','):
+        if ele == '' or ele == ':':
+            slices.append(slice(None))
+        else:
+            args = []
+            for _ele in ele.split(':'):
+                if _ele == '':
+                    args.append(None)
+                else:
+                    args.append(int(_ele))
+            slices.append(slice(*args))
+    return tuple(slices)
+
+
+class MultiFileDescriptor(object):
+    """What is this class?
+
+    First of all, I want to load all format kaldi files
+    only by using read_kaldi function, and I want to load it
+    from file and file descriptor including standard input stream.
+    To judge its file format it is required to make the
+    file descriptor read and seek(to return original position).
+    However, stdin is not seekable, so I create this clas.
+    This class joints multiple file descriptors
+    and I assume this class is used as follwoing,
+
+        >>> string = fd.read(size)
+        >>> # To check format from string
+        >>> _fd = StringIO(string)
+        >>> newfd = MultiFileDescriptor(_fd, fd)
+    """
+    def __init__(self, *fds):
+        self.fds = fds
+        self._current_idx = 0
+
+    def read(self, size):
+        if len(self.fds) <= self._current_idx:
+            return b''
+        string = self.fds[self._current_idx].read(size)
+        remain = size - len(string)
+        if remain > 0:
+            self._current_idx += 1
+            string2 = self.read(remain)
+            return string + string2
+        else:
+            return string
