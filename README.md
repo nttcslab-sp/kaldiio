@@ -105,7 +105,7 @@ for key, array in ReadHelper('ark: gunzip -c file.ark.gz |'):
 
 ```python
 from kaldiio import ReadHelper
-for key, array in ReadHelper('scp:wav.scp', wav=True):
+for key, (rate, array) in ReadHelper('scp:wav.scp', wav=True):
     ...
 ```
 
@@ -114,7 +114,7 @@ for key, array in ReadHelper('scp:wav.scp', wav=True):
 
 ```python
 from kaldiio import ReadHelper
-for key, array in ReadHelper('scp:wav.scp', wav=True, segments='segments'):
+for key, (rate, array) in ReadHelper('scp:wav.scp', wav=True, segments='segments'):
     ...
 ```
 
