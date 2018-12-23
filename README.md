@@ -80,7 +80,7 @@ with WriteHelper('ark:| gzip -c file.ark.gz') as writer:
 ```python
 import numpy
 from kaldiio import WriteHelper
-with WriteHelper('ar:-') as writer:
+with WriteHelper('ark:-') as writer:
     for i in range(10):
         writer(str(i), numpy.random.randn(10, 10))
 ```
