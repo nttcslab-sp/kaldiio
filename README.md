@@ -71,7 +71,7 @@ with WriteHelper('ark,t:file.ark') as writer:
 ```python
 import numpy
 from kaldiio import WriteHelper
-with WriteHelper('ark:| gzip -c file.ark.gz') as writer:
+with WriteHelper('ark:| gzip -c > file.ark.gz') as writer:
     for i in range(10):
         writer(str(i), numpy.random.randn(10, 10))
 ```
