@@ -75,7 +75,15 @@ with WriteHelper('ark:| gzip -c file.ark.gz') as writer:
     for i in range(10):
         writer(str(i), numpy.random.randn(10, 10))
 ```
+- Write matrice to stdout
 
+```python
+import numpy
+from kaldiio import WriteHelper
+with WriteHelper('ar:-') as writer:
+    for i in range(10):
+        writer(str(i), numpy.random.randn(10, 10))
+```
 ### ReadHelper
 - Read matrix-scp
 
@@ -107,6 +115,15 @@ for key, array in ReadHelper('ark:wav.scp', wav=True):
 ```python
 from kaldiio import ReadHelper
 for key, array in ReadHelper('ark:wav.scp', wav=True, segments='segments'):
+    ...
+```
+
+- Read from stdin
+
+```python
+import numpy
+from kaldiio import ReadHelper
+for key, array in ReadHelper('ark:-'):
     ...
 ```
 
