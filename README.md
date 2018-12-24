@@ -89,24 +89,27 @@ with WriteHelper('ark:-') as writer:
 
 ```python
 from kaldiio import ReadHelper
-for key, array in ReadHelper('scp:file.scp'):
-    ...
+with ReadHelper('scp:file.scp') as reader:
+    for key, array in reader:
+        ...
 ```
 
 - Read gziped ark
 
 ```python
 from kaldiio import ReadHelper
-for key, array in ReadHelper('ark: gunzip -c file.ark.gz |'):
-    ...
+with ReadHelper('ark: gunzip -c file.ark.gz |') as reader:
+    for key, array in reader:
+        ...
 ```
 
 - Read wav.scp
 
 ```python
 from kaldiio import ReadHelper
-for key, (rate, array) in ReadHelper('scp:wav.scp', wav=True):
-    ...
+with ReadHelper('scp:wav.scp', wav=True) as reader:
+    for key, (rate, array) in reader:
+        ...
 ```
 
 
@@ -114,8 +117,9 @@ for key, (rate, array) in ReadHelper('scp:wav.scp', wav=True):
 
 ```python
 from kaldiio import ReadHelper
-for key, (rate, array) in ReadHelper('scp:wav.scp', wav=True, segments='segments'):
-    ...
+with ReadHelper('scp:wav.scp', wav=True, segments='segments') as reader
+    for key, (rate, array) in reader:
+        ...
 ```
 
 - Read from stdin
@@ -123,8 +127,9 @@ for key, (rate, array) in ReadHelper('scp:wav.scp', wav=True, segments='segments
 ```python
 import numpy
 from kaldiio import ReadHelper
-for key, array in ReadHelper('ark:-'):
-    ...
+with ReadHelper('ark:-') as reader:
+    for key, array in reader:
+        ...
 ```
 
 
