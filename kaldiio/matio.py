@@ -474,8 +474,8 @@ def write_array(fd, array, endian='<', compression_method=None):
                 'array must be matrix if compression_method is not None: {}'
                 .format(array.ndim))
 
-        global_header = GlobalHeader.compute(array, compression_method)
-        size += global_header.write(fd, endian)
+        global_header = GlobalHeader.compute(array, compression_method, endian)
+        size += global_header.write(fd)
         if global_header.type == 'CM':
             per_col_header = PerColHeader.compute(array, global_header)
             size += per_col_header.write(fd, global_header)
