@@ -14,7 +14,7 @@ kOneByteZeroOne = 7
 
 class GlobalHeader(object):
     """This is a imitation class of the structure "GlobalHeader" """
-    def __init__(self, type, min_value, range, rows, cols):
+    def __init__(self, type, min_value, range, rows, cols, endian='<'):
         if type in ('CM', 'CM2'):
             c = 65535.
         elif type == 'CM3':
@@ -27,6 +27,7 @@ class GlobalHeader(object):
         self.range = range
         self.rows = rows
         self.cols = cols
+        self.endian = endian
 
     @property
     def size(self):
@@ -40,9 +41,11 @@ class GlobalHeader(object):
         cols = struct.unpack(endian + 'i', fd.read(4))[0]
         assert rows > 0
         assert cols > 0
-        return GlobalHeader(type, min_value, range, rows, cols)
+        return GlobalHeader(type, min_value, range, rows, cols, endian)
 
-    def write(self, fd, endian='<'):
+    def write(self, fd, endian=None):
+        if endian is None:
+            endian = self.endian
         fd.write(self.type.encode() + b' ')
         fd.write(struct.pack(endian + 'f', self.min_value))
         fd.write(struct.pack(endian + 'f', self.range))
@@ -51,7 +54,7 @@ class GlobalHeader(object):
         return self.size
 
     @staticmethod
-    def compute(array, compression_method):
+    def compute(array, compression_method, endian='<'):
         if compression_method == kAutomaticMethod:
             if array.shape[0] > 8:
                 compression_method = kSpeechFeature
@@ -93,30 +96,40 @@ class GlobalHeader(object):
                 'Unknown compression_method: {}'.format(compression_method))
 
         return GlobalHeader(
-            matrix_type, min_value, range_, array.shape[0], array.shape[1])
+            matrix_type, min_value, range_, array.shape[0], array.shape[1],
+            endian)
 
     def float_to_uint(self, array):
-        return (array - self.min_value) / self.range * self.c
+        if self.c == 65535.:
+            dtype = np.dtype(self.endian + 'u2')
+        else:
+            dtype = np.dtype(self.endian + 'u1')
+        # + 0.499 is to round to closest int
+        array = ((array - self.min_value) / self.range * self.c + 0.499)
+        return array.astype(np.dtype(dtype))
 
     def uint_to_float(self, array):
+        array = array.astype(np.float32)
         return self.min_value + array * self.range / self.c
 
 
 class PerColHeader(object):
     """This is a imitation class of the structure "PerColHeader" """
-    def __init__(self, p0, p25, p75, p100):
+    def __init__(self, p0, p25, p75, p100, endian='<'):
         # p means percentile
         self.p0 = p0
         self.p25 = p25
         self.p75 = p75
         self.p100 = p100
+        self.endian = endian
 
     @property
     def size(self):
         return 8 * self.p0.shape[0]
 
     @staticmethod
-    def read(fd, global_header, endian='<'):
+    def read(fd, global_header):
+        endian = global_header.endian
         # Read PerColHeader
         size_of_percolheader = 8
         buf = fd.read(size_of_percolheader * global_header.cols)
@@ -126,9 +139,12 @@ class PerColHeader(object):
         header_array = global_header.uint_to_float(header_array)
         header_array = header_array.reshape(-1, 4, 1)
         return PerColHeader(header_array[:, 0], header_array[:, 1],
-                            header_array[:, 2], header_array[:, 3])
+                            header_array[:, 2], header_array[:, 3],
+                            endian)
 
-    def write(self, fd, global_header, endian='<'):
+    def write(self, fd, global_header, endian=None):
+        if endian is None:
+            endian = self.endian
         header_array = np.concatenate(
             [self.p0, self.p25, self.p75, self.p100], axis=1)
         header_array = global_header.float_to_uint(header_array)
@@ -182,7 +198,7 @@ class PerColHeader(object):
         p25 = p25[:, None]
         p75 = p75[:, None]
         p100 = p100[:, None]
-        return PerColHeader(p0, p25, p75, p100)
+        return PerColHeader(p0, p25, p75, p100, global_header.endian)
 
     def float_to_char(self, array):
         p0, p25, p75, p100 = self.p0, self.p25, self.p75, self.p100
@@ -191,6 +207,7 @@ class PerColHeader(object):
         ma3 = array >= p75
         ma2 = ~ma1 * ~ma3
 
+        # +0.5 round to the closest int
         tmp = (array - p0) / (p25 - p0) * 64. + 0.5
         tmp = np.where(tmp < 0., 0., np.where(tmp > 64., 64., tmp))
 
@@ -200,9 +217,10 @@ class PerColHeader(object):
         tmp3 = ((array - p75) / (p100 - p75) * 63. + 192.5)
         tmp3 = np.where(tmp3 < 192., 192., np.where(tmp3 > 255., 255., tmp3))
         array = np.where(ma1, tmp, np.where(ma2, tmp2, tmp3))
-        return array
+        return array.astype(np.dtype(self.endian + 'u1'))
 
     def char_to_float(self, array):
+        array = array.astype(np.float32)
         p0, p25, p75, p100 = self.p0, self.p25, self.p75, self.p100
 
         ma1 = array <= 64
