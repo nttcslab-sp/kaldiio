@@ -12,7 +12,8 @@ from six import string_types
 
 from kaldiio.compression_header import GlobalHeader
 from kaldiio.compression_header import PerColHeader
-from kaldiio.utils import convert_to_slice, MultiFileDescriptor
+from kaldiio.utils import convert_to_slice
+from kaldiio.utils import MultiFileDescriptor
 from kaldiio.utils import open_like_kaldi
 from kaldiio.utils import open_or_fd
 
@@ -203,7 +204,7 @@ def read_matrix_or_vector(fd, endian='<', return_size=False):
         # Read GlobalHeader
         global_header = GlobalHeader.read(fd, Type, endian)
         size += global_header.size
-        per_col_header = PerColHeader.read(fd, global_header, endian)
+        per_col_header = PerColHeader.read(fd, global_header)
         size += per_col_header.size
 
         # Read data
@@ -211,7 +212,6 @@ def read_matrix_or_vector(fd, endian='<', return_size=False):
         size += global_header.rows * global_header.cols
         array = np.frombuffer(buf, dtype=np.dtype(endian + 'u1'))
         array = array.reshape((global_header.cols, global_header.rows))
-        array = np.asarray(array, np.float32)
 
         # Decompress
         array = per_col_header.char_to_float(array)
@@ -226,7 +226,6 @@ def read_matrix_or_vector(fd, endian='<', return_size=False):
         buf = fd.read(2 * global_header.rows * global_header.cols)
         array = np.frombuffer(buf, dtype=np.dtype(endian + 'u2'))
         array = array.reshape((global_header.rows, global_header.cols))
-        array = np.asarray(array, np.float32)
 
         # Decompress
         array = global_header.uint_to_float(array)
@@ -240,7 +239,6 @@ def read_matrix_or_vector(fd, endian='<', return_size=False):
         buf = fd.read(global_header.rows * global_header.cols)
         array = np.frombuffer(buf, dtype=np.dtype(endian + 'u1'))
         array = array.reshape((global_header.rows, global_header.cols))
-        array = array.astype(np.float32)
 
         # Decompress
         array = global_header.uint_to_float(array)
@@ -480,10 +478,9 @@ def write_array(fd, array, endian='<', compression_method=None):
         size += global_header.write(fd, endian)
         if global_header.type == 'CM':
             per_col_header = PerColHeader.compute(array, global_header)
-            size += per_col_header.write(fd, global_header, endian)
+            size += per_col_header.write(fd, global_header)
 
             array = per_col_header.float_to_char(array.T)
-            array = array.astype(np.dtype(endian + 'u1'))
 
             byte_string = array.tobytes()
             fd.write(byte_string)
@@ -491,7 +488,6 @@ def write_array(fd, array, endian='<', compression_method=None):
 
         elif global_header.type == 'CM2':
             array = global_header.float_to_uint(array)
-            array = array.astype(np.dtype(endian + 'u2'))
 
             byte_string = array.tobytes()
             fd.write(byte_string)
@@ -499,7 +495,6 @@ def write_array(fd, array, endian='<', compression_method=None):
 
         elif global_header.type == 'CM3':
             array = global_header.float_to_uint(array)
-            array = array.astype(np.dtype(endian + 'u1'))
 
             byte_string = array.tobytes()
             fd.write(byte_string)
