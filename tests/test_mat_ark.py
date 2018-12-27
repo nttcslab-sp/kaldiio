@@ -45,7 +45,7 @@ def test_write_read(tmpdir, endian):
 def test_write_read_zerosize_array(tmpdir):
     path = tmpdir.mkdir('test')
 
-    a = np.array([], dtype=np.float32).reshape(0,0)
+    a = np.array([], dtype=np.float32).reshape(0, 0)
     b = np.random.rand(10, 120).astype(np.float32)
     origin = {'a': a, 'b': b}
     kaldiio.save_ark(path.join('a.ark').strpath, origin,
