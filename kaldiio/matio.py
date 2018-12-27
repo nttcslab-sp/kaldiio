@@ -259,14 +259,12 @@ def read_matrix_or_vector(fd, endian='<', return_size=False):
         size += 1
         rows = struct.unpack(endian + 'i', fd.read(4))[0]
         size += 4
-        assert rows > 0
         dim = rows
         if 'M' in Type:  # As matrix
             assert fd.read(1) == b'\4'
             size += 1
             cols = struct.unpack(endian + 'i', fd.read(4))[0]
             size += 4
-            assert cols > 0
             dim = rows * cols
 
         buf = fd.read(dim * bytes_per_sample)
@@ -468,6 +466,8 @@ def write_array(fd, array, endian='<', compression_method=None):
     assert isinstance(array, np.ndarray)
     fd.write(b'\0B')
     size += 2
+    if endian not in array.dtype.str:
+        array = array.astype(array.dtype.newbyteorder())
     if compression_method is not None:
         if array.ndim != 2:
             raise ValueError(
