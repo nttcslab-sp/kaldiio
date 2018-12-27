@@ -466,8 +466,6 @@ def write_array(fd, array, endian='<', compression_method=None):
     assert isinstance(array, np.ndarray)
     fd.write(b'\0B')
     size += 2
-    if endian not in array.dtype.str:
-        array = array.astype(array.dtype.newbyteorder())
     if compression_method is not None:
         if array.ndim != 2:
             raise ValueError(
@@ -539,6 +537,8 @@ def write_array(fd, array, endian='<', compression_method=None):
             size += 1
             fd.write(struct.pack(endian + 'i', array.shape[1]))  # Cols
             size += 4
+        if endian not in array.dtype.str:
+            array = array.astype(array.dtype.newbyteorder())
         fd.write(array.tobytes())
         size += array.nbytes
     else:
