@@ -19,10 +19,33 @@ def test_read_arks(fname):
     _compare_allclose(ark, ark0, atol=1e-1)
 
 
-def test_write_read(tmpdir):
+@pytest.mark.parametrize('endian', ['<', '>'])
+def test_write_read(tmpdir, endian):
     path = tmpdir.mkdir('test')
 
     a = np.random.rand(1000, 120).astype(np.float32)
+    b = np.random.rand(10, 120).astype(np.float32)
+    origin = {'a': a, 'b': b}
+    kaldiio.save_ark(path.join('a.ark').strpath, origin,
+                     scp=path.join('b.scp').strpath, endian=endian)
+
+    d2 = {k: v for k, v in kaldiio.load_ark(path.join('a.ark').strpath,
+                                            endian=endian)}
+    d5 = {k: v
+          for k, v in kaldiio.load_scp(path.join('b.scp').strpath,
+                                       endian=endian).items()}
+    with open(path.join('a.ark').strpath, 'rb') as fd:
+        d6 = {k: v for k, v in
+              kaldiio.load_ark(fd, endian=endian)}
+    _compare(d2, origin)
+    _compare(d5, origin)
+    _compare(d6, origin)
+
+
+def test_write_read_zerosize_array(tmpdir):
+    path = tmpdir.mkdir('test')
+
+    a = np.array([], dtype=np.float32).reshape(0, 0)
     b = np.random.rand(10, 120).astype(np.float32)
     origin = {'a': a, 'b': b}
     kaldiio.save_ark(path.join('a.ark').strpath, origin,
@@ -53,6 +76,49 @@ def test_write_read_ascii(tmpdir):
     _compare_allclose(d5, origin)
 
 
+@pytest.mark.parametrize('endian', ['<', '>'])
+def test_write_read_int32_vector(tmpdir, endian):
+    path = tmpdir.mkdir('test')
+
+    a = np.random.randint(1, 128, 10, dtype=np.int32)
+    b = np.random.randint(1, 128, 10, dtype=np.int32)
+    origin = {'a': a, 'b': b}
+    kaldiio.save_ark(path.join('a.ark').strpath, origin,
+                     scp=path.join('b.scp').strpath,
+                     endian=endian)
+
+    d2 = {k: v for k, v in kaldiio.load_ark(path.join('a.ark').strpath,
+                                            endian=endian)}
+    d5 = {k: v
+          for k, v in kaldiio.load_scp(path.join('b.scp').strpath,
+                                       endian=endian).items()}
+    with open(path.join('a.ark').strpath, 'rb') as fd:
+        d6 = {k: v for k, v in kaldiio.load_ark(fd, endian=endian)}
+    _compare(d2, origin)
+    _compare(d5, origin)
+    _compare(d6, origin)
+
+
+def test_write_read_int32_vector_ascii(tmpdir):
+    path = tmpdir.mkdir('test')
+
+    a = np.random.randint(1, 128, 10, dtype=np.int32)
+    b = np.random.randint(1, 128, 10, dtype=np.int32)
+    origin = {'a': a, 'b': b}
+    kaldiio.save_ark(path.join('a.ark').strpath, origin,
+                     scp=path.join('b.scp').strpath,
+                     text=True)
+
+    d2 = {k: v for k, v in kaldiio.load_ark(path.join('a.ark').strpath)}
+    d5 = {k: v
+          for k, v in kaldiio.load_scp(path.join('b.scp').strpath).items()}
+    with open(path.join('a.ark').strpath, 'r') as fd:
+        d6 = {k: v for k, v in kaldiio.load_ark(fd)}
+    _compare_allclose(d2, origin)
+    _compare_allclose(d5, origin)
+    _compare_allclose(d6, origin)
+
+
 @pytest.mark.parametrize('compression_method', [1, 3, 5])
 def test_write_compressed_arks(tmpdir, compression_method):
     # Assume arks dir existing at the same directory
@@ -67,8 +133,9 @@ def test_write_compressed_arks(tmpdir, compression_method):
     _compare_allclose(arkc, arkc_valid, atol=1e-4)
 
 
+@pytest.mark.parametrize('endian', ['<', '>'])
 @pytest.mark.parametrize('compression_method', [2, 3, 7])
-def test_write_read_compress(tmpdir, compression_method):
+def test_write_read_compress(tmpdir, compression_method, endian):
     path = tmpdir.mkdir('test')
 
     a = np.random.rand(1000, 120).astype(np.float32)
@@ -76,13 +143,16 @@ def test_write_read_compress(tmpdir, compression_method):
     origin = {'a': a, 'b': b}
     kaldiio.save_ark(path.join('a.ark').strpath, origin,
                      scp=path.join('b.scp').strpath,
-                     compression_method=compression_method)
+                     compression_method=compression_method,
+                     endian=endian)
 
-    d2 = {k: v for k, v in kaldiio.load_ark(path.join('a.ark').strpath)}
+    d2 = {k: v for k, v in kaldiio.load_ark(path.join('a.ark').strpath,
+                                            endian=endian)}
     d5 = {k: v
-          for k, v in kaldiio.load_scp(path.join('b.scp').strpath).items()}
+          for k, v in kaldiio.load_scp(path.join('b.scp').strpath,
+                                       endian=endian).items()}
     with open(path.join('a.ark').strpath, 'rb') as fd:
-        d6 = {k: v for k, v in kaldiio.load_ark(fd)}
+        d6 = {k: v for k, v in kaldiio.load_ark(fd, endian=endian)}
     _compare_allclose(d2, origin, atol=1e-1)
     _compare_allclose(d5, origin, atol=1e-1)
     _compare_allclose(d6, origin, atol=1e-1)
