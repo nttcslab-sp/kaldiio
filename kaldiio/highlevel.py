@@ -67,6 +67,9 @@ class WriteHelper(object):
 
     """
     def __init__(self, wspecifier, compression_method=None):
+        self.initialized = False
+        self.closed = False
+
         self.compression_method = compression_method
         spec_dict = parse_specifier(wspecifier)
         if set(spec_dict) == {'scp'}:
@@ -86,7 +89,7 @@ class WriteHelper(object):
             self.fscp = open_like_kaldi(spec_dict['scp'], 'w')
         else:
             self.fscp = None
-        self.closed = False
+        self.initialized = True
 
     def __call__(self, key, array):
         if self.closed:
@@ -101,18 +104,14 @@ class WriteHelper(object):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.fark.close()
-        if self.fscp is not None:
-            self.fscp.close()
-
-    def __del__(self):
-        if not self.closed:
-            self.close()
+        self.close()
 
     def close(self):
-        self.fark.close()
-        if self.fscp is not None:
-            self.fscp.close()
+        if self.initialized and not self.closed:
+            self.fark.close()
+            if self.fscp is not None:
+                self.fscp.close()
+            self.closed = True
 
 
 class ReadHelper(object):
@@ -132,6 +131,10 @@ class ReadHelper(object):
 
     """
     def __init__(self, wspecifier, wav=False, segments=None):
+        self.initialized = False
+        self.scp = None
+        self.closed = False
+
         spec_dict = parse_specifier(wspecifier)
         if len(spec_dict) != 1:
             raise RuntimeError('Specify one of scp or ark in rspecifier')
@@ -153,7 +156,7 @@ class ReadHelper(object):
         else:
             self.dict = None
             self.file = open_like_kaldi(next(iter(spec_dict.values())), mode)
-        self.closed = False
+        self.initialized = True
 
     def __iter__(self):
         if self.scp:
@@ -208,15 +211,7 @@ class ReadHelper(object):
         if not self.scp and not self.closed:
             self.file.close()
 
-    def __del__(self):
-        if not self.scp and not self.closed:
-            self.close()
-
     def close(self):
-        if not self.scp and not self.closed:
+        if self.initialized and not self.scp and not self.closed:
             self.file.close()
-
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod()
+            self.closed = True
