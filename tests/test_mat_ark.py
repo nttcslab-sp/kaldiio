@@ -53,6 +53,45 @@ def test_write_read_ascii(tmpdir):
     _compare_allclose(d5, origin)
 
 
+def test_write_read_int32_vector(tmpdir):
+    path = tmpdir.mkdir('test')
+
+    a = np.random.randint(1, 128, 10, dtype=np.int32)
+    b = np.random.randint(1, 128, 10, dtype=np.int32)
+    origin = {'a': a, 'b': b}
+    kaldiio.save_ark(path.join('a.ark').strpath, origin,
+                     scp=path.join('b.scp').strpath)
+
+    d2 = {k: v for k, v in kaldiio.load_ark(path.join('a.ark').strpath)}
+    d5 = {k: v
+          for k, v in kaldiio.load_scp(path.join('b.scp').strpath).items()}
+    with open(path.join('a.ark').strpath, 'rb') as fd:
+        d6 = {k: v for k, v in kaldiio.load_ark(fd)}
+    _compare(d2, origin)
+    _compare(d5, origin)
+    _compare(d6, origin)
+
+
+def test_write_read_int32_vector_ascii(tmpdir):
+    path = tmpdir.mkdir('test')
+
+    a = np.random.randint(1, 128, 10, dtype=np.int32)
+    b = np.random.randint(1, 128, 10, dtype=np.int32)
+    origin = {'a': a, 'b': b}
+    kaldiio.save_ark(path.join('a.ark').strpath, origin,
+                     scp=path.join('b.scp').strpath,
+                     text=True)
+
+    d2 = {k: v for k, v in kaldiio.load_ark(path.join('a.ark').strpath)}
+    d5 = {k: v
+          for k, v in kaldiio.load_scp(path.join('b.scp').strpath).items()}
+    with open(path.join('a.ark').strpath, 'r') as fd:
+        d6 = {k: v for k, v in kaldiio.load_ark(fd)}
+    _compare_allclose(d2, origin)
+    _compare_allclose(d5, origin)
+    _compare_allclose(d6, origin)
+
+
 @pytest.mark.parametrize('compression_method', [1, 3, 5])
 def test_write_compressed_arks(tmpdir, compression_method):
     # Assume arks dir existing at the same directory
