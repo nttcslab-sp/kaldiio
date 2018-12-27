@@ -1,62 +1,9 @@
-from collections import OrderedDict
-
 from kaldiio.matio import load_ark
 from kaldiio.matio import load_scp
 from kaldiio.matio import save_ark
 from kaldiio.utils import open_like_kaldi
+from kaldiio.utils import parse_specifier
 from kaldiio.wavio import load_wav_scp
-
-
-def parse_specifier(specifier):
-    """A utility to parse "specifier"
-
-    Args:
-        specifier (str):
-    Returns:
-        parsed_dict (OrderedDict):
-            Like {'ark': 'file.ark', 'scp': 'file.scp'}
-
-
-    >>> d = parse_specifier('ark,t,scp:file.ark,file.scp')
-    >>> print(d['ark,t'])
-    file.ark
-
-    """
-    if not isinstance(specifier, str):
-        raise TypeError(
-            'Argument must be str, but got {}'.format(type(specifier)))
-    sp = specifier.split(':', 1)
-    if len(sp) != 2:
-        if ':' not in specifier:
-            raise ValueError('The output file must be specified with '
-                             'kaldi-specifier style,'
-                             ' e.g. ark,scp:out.ark,out.scp, but you gave as '
-                             '{}'.format(specifier))
-
-    types, files = sp
-    types = list((map(lambda x: x.strip(), types.split(','))))
-    files = list((map(lambda x: x.strip(), files.split(','))))
-    for x in set(types):
-        if types.count(x) > 1:
-            raise ValueError('{} is duplicated.'.format(x))
-
-    supported = [{'ark'}, {'scp'}, {'ark', 'scp'},
-                 {'ark', 't'}, {'scp', 'ark', 't'}]
-    if set(types) not in supported:
-        raise ValueError(
-            'Invalid type: {}, must be one of {}'.format(types, supported))
-
-    if 't' in types:
-        types.remove('t')
-        types[types.index('ark')] = 'ark,t'
-
-    if len(types) != len(files):
-        raise ValueError(
-            'The number of file types need to match with the file names: '
-            '{} != {}, you gave as {}'.format(len(types), len(files),
-                                              specifier))
-
-    return OrderedDict(zip(types, files))
 
 
 class WriteHelper(object):
