@@ -44,6 +44,8 @@ from kaldiio import WriteHelper
 with WriteHelper('ark,scp:file.ark,file.scp') as writer:
     for i in range(10):
         writer(str(i), numpy.random.randn(10, 10))
+        # The following is equivalent
+        # writer[str(i)] = numpy.random.randn(10, 10)
 ```
 
 - Write in compressed matrix
