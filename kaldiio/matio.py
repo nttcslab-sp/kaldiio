@@ -448,7 +448,7 @@ def save_ark(ark, array_dict, scp=None,
 
 
 def save_mat(fname, array, endian='<', compression_method=None):
-    with open_or_fd(fname, 'rb') as fd:
+    with open_or_fd(fname, 'wb') as fd:
         return write_array(fd, array, endian, compression_method)
 
 
