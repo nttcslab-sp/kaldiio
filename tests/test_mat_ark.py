@@ -183,6 +183,15 @@ def test_append_mode(tmpdir):
     _compare(d4, origin)
 
 
+@pytest.mark.parametrize('endian', ['<', '>'])
+def test_write_read_mat(tmpdir, endian):
+    path = tmpdir.mkdir('test')
+    valid = np.random.rand(1000, 120).astype(np.float32)
+    kaldiio.save_mat(path.join('a.mat').strpath, valid)
+    test = kaldiio.load_mat(path.join('a.mat').strpath)
+    np.testing.assert_array_equal(test, valid)
+
+
 def _compare(d1, d2):
     assert len(d1) != 0
     assert set(d1.keys()) == set(d2.keys())
