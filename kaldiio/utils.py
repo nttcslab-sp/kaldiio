@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from contextlib import contextmanager
 import io
 from io import TextIOBase
@@ -89,9 +88,22 @@ class _wrap_close(object):
         return iter(self._stream)
 
 
-@contextmanager
-def _stdstream_wrap(fd):
-    yield fd
+class _stdstream_wrap(object):
+    def __init__(self, fd):
+        self.fd = fd
+
+    def __enter__(self):
+        return self.fd
+
+    def __exit__(self, *args):
+        # Never close
+        pass
+
+    def __getattr__(self, name):
+        return getattr(self._stream, name)
+
+    def __iter__(self):
+        return iter(self._stream)
 
 
 def open_like_kaldi(name, mode='r'):
@@ -221,26 +233,39 @@ def parse_specifier(specifier):
                              '{}'.format(specifier))
 
     types, files = sp
-    types = list((map(lambda x: x.strip(), types.split(','))))
-    files = list((map(lambda x: x.strip(), files.split(','))))
-    for x in set(types):
-        if types.count(x) > 1:
-            raise ValueError('{} is duplicated.'.format(x))
-
-    supported = [{'ark'}, {'scp'}, {'ark', 'scp'},
-                 {'ark', 't'}, {'scp', 'ark', 't'}]
-    if set(types) not in supported:
+    types = types.split(',')
+    if 'ark' not in types and 'scp' not in types:
         raise ValueError(
-            'Invalid type: {}, must be one of {}'.format(types, supported))
+            'One of/both ark and scp is required: '
+            'e.g. ark,scp:out.ark,out.scp: '
+            '{}'.format(specifier))
+    elif 'ark' in types and 'scp' in types:
+        if ',' not in files:
+            raise ValueError(
+                'You specified both ark and scp, '
+                'but a file path is given: '
+                'e.g. ark,scp:out.ark,out.scp: {}'.format(specifier))
+        files = files.split(',', 1)
+    else:
+        files = [files]
 
-    if 't' in types:
-        types.remove('t')
-        types[types.index('ark')] = 'ark,t'
+    spec_dict = {'ark': None,
+                 'scp': None,
+                 't': False,  # text
+                 'o': False,  # once
+                 'p': False,  # permissive
+                 'f': False,  # flush
+                 's': False,  # sorted
+                 'cs': False,  # called-sorted
+                 }
+    for t in types:
+        if t not in spec_dict:
+            raise ValueError('Unknown option {}()'.format(t, types))
+        if t in ('scp', 'ark'):
+            if spec_dict[t] is not None:
+                raise ValueError('You specified {} twice'.format(t))
+            spec_dict[t] = files.pop(0)
+        else:
+            spec_dict[t] = True
 
-    if len(types) != len(files):
-        raise ValueError(
-            'The number of file types need to match with the file names: '
-            '{} != {}, you gave as {}'.format(len(types), len(files),
-                                              specifier))
-
-    return OrderedDict(zip(types, files))
+    return spec_dict

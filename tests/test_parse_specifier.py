@@ -21,14 +21,9 @@ def test_error2():
 
 def test_error3():
     with pytest.raises(ValueError):
-        parse_specifier('ark:file.ark,file.scp')
-
-
-def test_error4():
-    with pytest.raises(ValueError):
         parse_specifier('ark,scp:file.ark')
 
 
-def test_error5():
+def test_error4():
     with pytest.raises(ValueError):
         parse_specifier('ark,ark:file.ark,file.ark')

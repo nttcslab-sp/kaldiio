@@ -1,3 +1,5 @@
+import warnings
+
 from kaldiio.matio import load_ark
 from kaldiio.matio import load_scp
 from kaldiio.matio import save_ark
@@ -19,20 +21,21 @@ class WriteHelper(object):
 
         self.compression_method = compression_method
         spec_dict = parse_specifier(wspecifier)
-        if set(spec_dict) == {'scp'}:
+        if spec_dict['scp'] is not None and spec_dict['ark'] is None:
             raise ValueError(
                 'Writing only in a scp file is not supported. '
                 'Please specify a ark file with a scp file.')
+        for k in spec_dict:
+            if spec_dict[k] and k not in ('scp', 'ark', 't', 'f'):
+                warnings.warn(
+                    '{} option is given, but currently it never affects'
+                    .format(k))
 
-        if 'ark,t' in spec_dict:
-            ark_file = spec_dict['ark,t']
-            self.text = True
-        else:
-            ark_file = spec_dict['ark']
-            self.text = False
-
+        self.text = spec_dict['t']
+        self.flush = spec_dict['f']
+        ark_file = spec_dict['ark']
         self.fark = open_like_kaldi(ark_file, 'wb')
-        if 'scp' in spec_dict:
+        if spec_dict['scp'] is not None:
             self.fscp = open_like_kaldi(spec_dict['scp'], 'w')
         else:
             self.fscp = None
@@ -43,6 +46,12 @@ class WriteHelper(object):
             raise RuntimeError('WriteHelper has been already closed')
         save_ark(self.fark, {key: array}, scp=self.fscp, text=self.text,
                  compression_method=self.compression_method)
+
+        if self.flush:
+            if self.fark is not None:
+                self.fark.flush()
+            if self.fscp is not None:
+                self.fscp.flush()
 
     def __setitem__(self, key, value):
         self(key, value)
@@ -83,26 +92,30 @@ class ReadHelper(object):
         self.closed = False
 
         spec_dict = parse_specifier(wspecifier)
-        if len(spec_dict) != 1:
+        if spec_dict['scp'] is not None and spec_dict['ark'] is not None:
             raise RuntimeError('Specify one of scp or ark in rspecifier')
+        for k in spec_dict:
+            if spec_dict[k] and k not in ('scp', 'ark'):
+                warnings.warn(
+                    '{} option is given, but currently it never affects'
+                    .format(k))
 
-        if 'scp' in spec_dict:
-            self.scp = True
-            mode = 'r'
+        if spec_dict['scp'] is not None:
+            self.scp = spec_dict['scp']
         else:
             self.scp = False
-            mode = 'rb'
 
         if self.scp:
-            with open_like_kaldi(next(iter(spec_dict.values())), mode) as f:
+            with open_like_kaldi(spec_dict['scp'], 'r') as f:
                 if wav:
                     self.dict = load_wav_scp(f, segments=segments)
                 else:
                     self.dict = load_scp(f)
+
             self.file = None
         else:
             self.dict = None
-            self.file = open_like_kaldi(next(iter(spec_dict.values())), mode)
+            self.file = open_like_kaldi(spec_dict['ark'], 'rb')
         self.initialized = True
 
     def __iter__(self):
