@@ -23,12 +23,29 @@ def test_read_helper(tmpdir):
         numpy.testing.assert_array_equal(array_in, array_out)
 
 
+def test_read_helper_ascii(tmpdir):
+    path = tmpdir.strpath
+    array_in = numpy.random.randn(10, 10)
+    save_ark('{}/feats.ark'.format(path),
+             {'foo': array_in}, scp='{}/feats.scp'.format(path),
+             text=True)
+    helper = ReadHelper('ark:cat {}/feats.ark |'.format(path))
+    for uttid, array_out in helper:
+        assert uttid == 'foo'
+        numpy.testing.assert_allclose(array_in, array_out)
+
+    helper = ReadHelper('ark:{}/feats.ark'.format(path))
+    for uttid, array_out in helper:
+        assert uttid == 'foo'
+        numpy.testing.assert_allclose(array_in, array_out)
+
+
 def test_write_helper(tmpdir):
     path = tmpdir.strpath
     d = {'foo': numpy.random.randn(10, 10),
          'bar': numpy.random.randn(10, 10)}
 
-    with WriteHelper('ark,scp:{p}/out.ark, {p}/out.scp'.format(p=path)) as w:
+    with WriteHelper('ark,f,scp:{p}/out.ark,{p}/out.scp'.format(p=path)) as w:
         for k, v in d.items():
             w(k, v)
     from_ark = dict(load_ark('{p}/out.ark'.format(p=path)))
@@ -42,7 +59,8 @@ def test_write_helper_ascii(tmpdir):
     d = {'foo': numpy.random.randn(10, 10),
          'bar': numpy.random.randn(10, 10)}
 
-    with WriteHelper('ark,t,scp:{p}/out.ark, {p}/out.scp'.format(p=path)) as w:
+    with WriteHelper('ark,t,f,scp:{p}/out.ark,{p}/out.scp'
+                     .format(p=path)) as w:
         for k, v in d.items():
             w(k, v)
     from_ark = dict(load_ark('{p}/out.ark'.format(p=path)))

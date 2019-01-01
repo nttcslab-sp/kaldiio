@@ -13,16 +13,13 @@ from six import string_types
 from kaldiio.compression_header import GlobalHeader
 from kaldiio.compression_header import PerColHeader
 from kaldiio.utils import convert_to_slice
+from kaldiio.utils import LazyLoader
 from kaldiio.utils import MultiFileDescriptor
 from kaldiio.utils import open_like_kaldi
 from kaldiio.utils import open_or_fd
+from kaldiio.wavio import read_wav
 
 PY3 = sys.version_info[0] == 3
-
-if PY3:
-    from collections.abc import MutableMapping
-else:
-    from collections import MutableMapping
 
 
 def load_scp(fname, endian='<', separator=' ', as_bytes=False):
@@ -71,40 +68,6 @@ def load_mat(ark_name, endian='<', as_bytes=False):
     return array
 
 
-class LazyLoader(MutableMapping):
-    """Don't use this class directly"""
-    def __init__(self, loader):
-        self._dict = {}
-        self._loader = loader
-
-    def __repr__(self):
-        return 'LazyLoader [{} keys]'.format(len(self))
-
-    def __getitem__(self, key):
-        ark_name = self._dict[key]
-        try:
-            return self._loader(ark_name)
-        except Exception:
-            sys.stderr.write(
-                'Error at loading "{}"'.format(ark_name))
-            raise
-
-    def __setitem__(self, key, value):
-        self._dict[key] = value
-
-    def __delitem__(self, key):
-        del self._dict[key]
-
-    def __iter__(self):
-        return self._dict.__iter__()
-
-    def __len__(self):
-        return len(self._dict)
-
-    def __contains__(self, item):
-        return item in self._dict
-
-
 def load_ark(fname, return_position=False, endian='<'):
     size = 0
     with open_or_fd(fname, 'rb') as fd:
@@ -149,21 +112,23 @@ def read_kaldi(fd, endian='<', return_size=False):
         endian (str):
         return_size (bool):
     """
-    binary_flag = fd.read(2)
+    binary_flag = fd.read(4)
     assert isinstance(binary_flag, binary_type)
     fd = MultiFileDescriptor(BytesIO(binary_flag), fd)
-    if binary_flag != b'\0B':  # Load as ascii
-        array, size = read_ascii_mat(fd, return_size=True)
+    # Load as wave file
+    if binary_flag[:4] == b'RIFF':
+        # array: Tuple[int, np.ndarray]
+        array, size = read_wav(fd, return_size=True)
 
-    else:  # Load as binary
-        # Check binary type
-        head = fd.read(3)
-        fd = MultiFileDescriptor(BytesIO(head), fd)
-        if b'\0B\4' == head:  # This is int32Vector
+    # Load as binary
+    elif binary_flag[:2] == b'\0B':
+        if binary_flag[2:3] == b'\4':  # This is int32Vector
             array, size = read_int32vector(fd, endian, return_size=True)
         else:
             array, size = read_matrix_or_vector(fd, endian, return_size=True)
-
+    # Load as ascii
+    else:
+        array, size = read_ascii_mat(fd, return_size=True)
     if return_size:
         return array, size
     else:
@@ -352,28 +317,6 @@ def read_ascii_mat(fd, return_size=False):
         return array, size
     else:
         return array
-
-
-def _get_offset(line, separator=' ', endian='<', as_bytes=False):
-    token, ark_name = line.split(separator, 1)
-    if ':' in ark_name:
-        fname, offset = ark_name.split(':', 1)
-        if '[' in offset and ']' in offset:
-            offset, Range = offset.split('[')
-        offset = int(offset)
-    else:
-        fname = ark_name
-        offset = None
-
-    with open_like_kaldi(fname, 'rb') as fd:
-        if offset is not None:
-            fd.seek(offset)
-        if not as_bytes:
-            array, _size = read_kaldi(fd, endian, return_size=True)
-        else:
-            array = fd.read()
-            _size = len(array)
-    return offset + _size
 
 
 def save_ark(ark, array_dict, scp=None,

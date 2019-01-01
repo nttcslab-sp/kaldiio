@@ -4,8 +4,8 @@ import kaldiio
 
 
 def test_open_like_kaldi(tmpdir):
-    with kaldiio.open_like_kaldi('echo -n hello |', 'r') as f:
-        assert f.read() == 'hello'
+    with kaldiio.open_like_kaldi('echo hello |', 'r') as f:
+        assert f.read() == 'hello\n'
     txt = tmpdir.mkdir('test').join('out.txt').strpath
     with kaldiio.open_like_kaldi('| cat > {}'.format(txt), 'w') as f:
         f.write('hello')
