@@ -2,8 +2,7 @@ import wave
 
 import numpy as np
 
-import kaldiio
-import kaldiio.wavio
+from kaldiio.matio import load_scp
 
 
 def test_load_wav(tmpdir):
@@ -15,10 +14,8 @@ def test_load_wav(tmpdir):
     array = np.random.randn(3, 4).astype(np.int16)
     _wavwrite(wav, array, 8000)
     with open(scp, 'w') as f:
-        f.write('aaa cat {wav} |'.format(wav=wav))
-    with open(scp, 'w') as f:
         f.write('aaa {wav}'.format(wav=wav))
-    rate, array2 = list(kaldiio.wavio.load_wav_scp(scp).values())[0]
+    rate, array2 = list(load_scp(scp).values())[0]
     np.testing.assert_array_equal(array, array2)
 
 
@@ -32,7 +29,7 @@ def test_load_wav_stream(tmpdir):
     _wavwrite(wav, array, 8000)
     with open(scp, 'w') as f:
         f.write('aaa cat {wav} |'.format(wav=wav))
-    rate, array2 = list(kaldiio.wavio.load_wav_scp(scp).values())[0]
+    rate, array2 = list(load_scp(scp).values())[0]
     np.testing.assert_array_equal(array, array2)
 
 

@@ -3,6 +3,8 @@ import os
 import re
 import struct
 import sys
+import warnings
+import wave
 
 import numpy as np
 from six import binary_type
@@ -18,11 +20,18 @@ from kaldiio.utils import MultiFileDescriptor
 from kaldiio.utils import open_like_kaldi
 from kaldiio.utils import open_or_fd
 from kaldiio.wavio import read_wav
+from kaldiio.wavio import read_wav_scipy
 
 PY3 = sys.version_info[0] == 3
 
+if PY3:
+    from collections.abc import Mapping
+else:
+    from collections import Mapping
 
-def load_scp(fname, endian='<', separator=None, as_bytes=False):
+
+def load_scp(fname, endian='<', separator=None, as_bytes=False,
+             segments=None, return_rate=True):
     """Lazy loader for kaldi scp file.
 
     Args:
@@ -30,18 +39,80 @@ def load_scp(fname, endian='<', separator=None, as_bytes=False):
         endian (str):
         separator (str):
         as_bytes (bool): Read as raw bytes string
+        segments (str): The path of segments
     """
-    loader = LazyLoader(partial(load_mat, endian=endian, as_bytes=as_bytes))
-    with open_or_fd(fname, 'r') as fd:
-        for line in fd:
-            try:
-                token, arkname = line.split(separator, 1)
-            except ValueError as e:
-                raise ValueError(
-                    str(e) + '\nFile format is wrong?')
-
-            loader[token] = arkname.strip()
+    load_func = partial(load_mat, endian=endian, as_bytes=as_bytes)
+    if segments is None:
+        loader = LazyLoader(load_func)
+        with open_or_fd(fname, 'r') as fd:
+            for line in fd:
+                try:
+                    token, arkname = line.split(separator, 1)
+                except ValueError as e:
+                    raise ValueError(
+                        str(e) + '\nFile format is wrong?')
+                loader[token] = arkname.strip()
+    else:
+        return SegmentsExtractor(fname, separator=separator,
+                                 return_rate=return_rate, segments=segments)
     return loader
+
+
+def load_wav_scp(fname,
+                 segments=None,
+                 separator=None, return_rate=True):
+    warnings.warn('Use load_scp instead of load_wav_scp', DeprecationWarning)
+    return load_scp(fname, separator=separator, return_rate=return_rate)
+
+
+class SegmentsExtractor(Mapping):
+    """Emulate the following,
+
+    https://github.com/kaldi-asr/kaldi/blob/master/src/featbin/extract-segments.cc
+
+    Args:
+        segments (str): The file format is
+            "<segment-id> <recording-id> <start-time> <end-time>\n"
+            "e.g. call-861225-A-0050-0065 call-861225-A 5.0 6.5\n"
+    """
+    def __init__(self, fname,
+                 segments=None, separator=' ', dtype='int', return_rate=True):
+        self.wav_scp = fname
+        self.wav_loader = load_scp(self.wav_scp, separator=separator,
+                                   return_rate=return_rate)
+
+        self.segments = segments
+        self._segments_dict = {}
+        with open(self.segments) as f:
+            for l in f:
+                sps = l.strip().split(' ')
+                if len(sps) != 4:
+                    raise RuntimeError('Format is invalid: {}'.format(l))
+                uttid, recodeid, st, et = sps
+                self._segments_dict[uttid] = (recodeid, float(st), float(et))
+
+                if recodeid not in self.wav_loader:
+                    raise RuntimeError(
+                        'Not found "{}" in {}'.format(recodeid, self.wav_scp))
+
+    def __iter__(self):
+        return iter(self._segments_dict)
+
+    def __contains__(self, item):
+        return item in self._segments_dict
+
+    def __len__(self):
+        return len(self._segments_dict)
+
+    def __getitem__(self, key):
+        recodeid, st, et = self._segments_dict[key]
+        rate, array = self.wav_loader[recodeid]
+        # Convert starting time of the segment to corresponding sample number.
+        # If end time is -1 then use the whole file starting from start time.
+        if et != -1:
+            return rate, array[int(st * rate):int(et * rate)]
+        else:
+            return rate, array[int(st * rate):]
 
 
 def load_mat(ark_name, endian='<', as_bytes=False):
@@ -64,7 +135,10 @@ def load_mat(ark_name, endian='<', as_bytes=False):
         else:
             array = fd.read()
     if slices is not None:
-        array = array[slices]
+        if isinstance(array, tuple):
+            array = (array[0], array[1][slices])
+        else:
+            array = array[slices]
     return array
 
 
@@ -113,12 +187,18 @@ def read_kaldi(fd, endian='<', return_size=False):
         return_size (bool):
     """
     binary_flag = fd.read(4)
-    assert isinstance(binary_flag, binary_type)
+    assert isinstance(binary_flag, binary_type), type(binary_flag)
     fd = MultiFileDescriptor(BytesIO(binary_flag), fd)
     # Load as wave file
     if binary_flag[:4] == b'RIFF':
-        # array: Tuple[int, np.ndarray]
-        array, size = read_wav(fd, return_size=True)
+        if fd.seekable():
+            array = read_wav_scipy(fd)
+        else:
+            try:
+                array = read_wav(fd)
+            # If wave error found, try scipy.wavfile
+            except wave.Error:
+                array = read_wav_scipy(fd)
 
     # Load as binary
     elif binary_flag[:2] == b'\0B':
@@ -406,7 +486,7 @@ def write_array(fd, array, endian='<', compression_method=None):
         size (int):
     """
     size = 0
-    assert isinstance(array, np.ndarray)
+    assert isinstance(array, np.ndarray), type(array)
     fd.write(b'\0B')
     size += 2
     if compression_method is not None:
@@ -442,7 +522,7 @@ def write_array(fd, array, endian='<', compression_method=None):
             size += len(byte_string)
 
     elif array.dtype == np.int32:
-        assert len(array.shape) == 1  # Must be vector
+        assert array.ndim == 1, array.ndim  # Must be vector
         fd.write(b'\4')
         fd.write(struct.pack(endian + 'i', len(array)))
         for x in array:
@@ -499,8 +579,8 @@ def write_array_ascii(fd, array, digit='.12g'):
     Returns:
         size (int):
     """
-    assert isinstance(array, np.ndarray)
-    assert array.ndim in (1, 2)
+    assert isinstance(array, np.ndarray), type(array)
+    assert array.ndim in (1, 2), array.ndim
     size = 0
     fd.write(b' [')
     size += 2

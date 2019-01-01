@@ -126,10 +126,10 @@ def open_like_kaldi(name, mode='r'):
         else:
             return name
 
-    if name[-1] == '|':
-        return my_popen(name[:-1], mode)
-    elif name[0] == '|':
-        return my_popen(name[1:], mode)
+    if name.strip()[-1] == '|':
+        return my_popen(name.strip()[:-1], mode)
+    elif name.strip()[0] == '|':
+        return my_popen(name.strip()[1:], mode)
     elif name == '-' and 'r' in mode:
         if mode == 'rb' and PY3:
             return _stdstream_wrap(sys.stdin.buffer)
@@ -198,6 +198,22 @@ class MultiFileDescriptor(object):
         self.fds = fds
         self._current_idx = 0
 
+    def seek(self, offset, from_what=0):
+        if from_what == 0:
+            for f in self.fds:
+                f.seek(offset, 0)
+                offset -= f.tell()
+                if offset == 0:
+                    break
+        else:
+            raise NotImplementedError('from_what={}'.format(from_what))
+
+    def seekable(self):
+        return all(f.seekable() for f in self.fds)
+
+    def tell(self):
+        return sum(f.tell() for f in self.fds)
+
     def read(self, size):
         if len(self.fds) <= self._current_idx:
             return b''
@@ -226,9 +242,6 @@ def parse_specifier(specifier):
     file.ark
 
     """
-    if not isinstance(specifier, str):
-        raise TypeError(
-            'Argument must be str, but got {}'.format(type(specifier)))
     sp = specifier.split(':', 1)
     if len(sp) != 2:
         if ':' not in specifier:
