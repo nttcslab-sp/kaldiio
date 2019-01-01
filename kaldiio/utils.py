@@ -126,7 +126,6 @@ def open_like_kaldi(name, mode='r'):
         else:
             return name
 
-    name = name.strip()
     if name[-1] == '|':
         return my_popen(name[:-1], mode)
     elif name[0] == '|':

@@ -45,7 +45,7 @@ def test_write_helper(tmpdir):
     d = {'foo': numpy.random.randn(10, 10),
          'bar': numpy.random.randn(10, 10)}
 
-    with WriteHelper('ark,f,scp:{p}/out.ark, {p}/out.scp'.format(p=path)) as w:
+    with WriteHelper('ark,f,scp:{p}/out.ark,{p}/out.scp'.format(p=path)) as w:
         for k, v in d.items():
             w(k, v)
     from_ark = dict(load_ark('{p}/out.ark'.format(p=path)))
@@ -59,7 +59,7 @@ def test_write_helper_ascii(tmpdir):
     d = {'foo': numpy.random.randn(10, 10),
          'bar': numpy.random.randn(10, 10)}
 
-    with WriteHelper('ark,t,f,scp:{p}/out.ark, {p}/out.scp'
+    with WriteHelper('ark,t,f,scp:{p}/out.ark,{p}/out.scp'
                      .format(p=path)) as w:
         for k, v in d.items():
             w(k, v)
