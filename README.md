@@ -20,7 +20,7 @@ The followings are supported.
   - Compressed Matrix for loading: CM1, CM2, CM3
   - Compressed Matrix for writing: All compressoin_method are supported: 1,2,3,4,5,6,7
 - Read/Write via a pipe: e.g. "ark: cat feats.ark |"
-- Loading wav.scp
+- Loading wav.scp / wav.ark
 
 The followings are **not supported**
 
