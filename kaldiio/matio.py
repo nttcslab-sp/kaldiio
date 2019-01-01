@@ -22,7 +22,7 @@ from kaldiio.wavio import read_wav
 PY3 = sys.version_info[0] == 3
 
 
-def load_scp(fname, endian='<', separator=' ', as_bytes=False):
+def load_scp(fname, endian='<', separator=None, as_bytes=False):
     """Lazy loader for kaldi scp file.
 
     Args:
@@ -40,7 +40,7 @@ def load_scp(fname, endian='<', separator=' ', as_bytes=False):
                 raise ValueError(
                     str(e) + '\nFile format is wrong?')
 
-            loader[token] = arkname
+            loader[token] = arkname.strip()
     return loader
 
 
