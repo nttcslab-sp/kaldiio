@@ -22,7 +22,7 @@ else:
 
 def load_wav_scp(fname,
                  segments=None,
-                 separator=' ', dtype='int', return_rate=True):
+                 separator=None, dtype='int', return_rate=True):
     if segments is None:
         return _load_wav_scp(fname, separator=separator, dtype=dtype,
                              return_rate=return_rate)
@@ -31,7 +31,7 @@ def load_wav_scp(fname,
                                  return_rate=return_rate, segments=segments)
 
 
-def _load_wav_scp(fname, separator=' ', dtype='int', return_rate=True):
+def _load_wav_scp(fname, separator=None, dtype='int', return_rate=True):
     assert dtype in ['int', 'float'], 'int or float'
     loader = LazyLoader(partial(load_wav,
                                 dtype=dtype,
@@ -39,7 +39,7 @@ def _load_wav_scp(fname, separator=' ', dtype='int', return_rate=True):
     with open_or_fd(fname, 'r') as fd:
         for line in fd:
             token, wavname = line.split(separator, 1)
-            loader[token] = wavname
+            loader[token] = wavname.strip()
     return loader
 
 
@@ -105,19 +105,14 @@ def load_wav(wav_name, return_rate=True, dtype='int'):
     else:
         fname = wav_name
         offset = None
+
     try:
         with open_like_kaldi(fname, 'rb') as fd:
             rate, array = read_wav(fd, offset, dtype=dtype)
     # If wave error found, try scipy.wavfile
     except wave.Error:
         with open_like_kaldi(fname, 'rb') as fd:
-            if offset is not None:
-                fd.seek(offset)
-            # scipy.io.wavfile doesn't support streaming input
-            data = fd.read()
-        fd2 = BytesIO(data)
-        rate, array = wavfile.read(fd2)
-        del fd2
+            rate, array = read_wav2(fd, offset, dtype=dtype)
 
     if slices is not None:
         array = array[slices]
@@ -148,6 +143,21 @@ def read_wav(fd, offset=None, dtype='int', return_size=False):
     array = np.frombuffer(data, dtype=np.dtype(dtype))
     if nchannels > 1:
         array = array.reshape(-1, nchannels)
+
+    if return_size:
+        return (rate, array), size
+    else:
+        return rate, array
+
+
+def read_wav2(fd, offset=None, dtype='int', return_size=False):
+    if offset is not None:
+        fd.seek(offset)
+    # scipy.io.wavfile doesn't support streaming input
+    data = fd.read()
+    size = len(data)
+    fd2 = BytesIO(data)
+    rate, array = wavfile.read(fd2)
 
     if return_size:
         return (rate, array), size
