@@ -6,8 +6,8 @@ import wave
 import numpy as np
 from scipy.io import wavfile as wavfile
 
-from kaldiio.matio import LazyLoader
 from kaldiio.utils import convert_to_slice
+from kaldiio.utils import LazyLoader
 from kaldiio.utils import open_like_kaldi
 from kaldiio.utils import open_or_fd
 
@@ -33,7 +33,7 @@ def load_wav_scp(fname,
 
 def _load_wav_scp(fname, separator=' ', dtype='int', return_rate=True):
     assert dtype in ['int', 'float'], 'int or float'
-    loader = LazyLoader(partial(_loader_wav,
+    loader = LazyLoader(partial(load_wav,
                                 dtype=dtype,
                                 return_rate=return_rate))
     with open_or_fd(fname, 'r') as fd:
@@ -93,7 +93,7 @@ class SegmentsExtractor(Mapping):
             return rate, array[int(st * rate):]
 
 
-def _loader_wav(wav_name, return_rate=True, dtype='int'):
+def load_wav(wav_name, return_rate=True, dtype='int'):
     assert dtype in ['int', 'float'], 'int or float'
     slices = None
     if ':' in wav_name:
@@ -105,36 +105,19 @@ def _loader_wav(wav_name, return_rate=True, dtype='int'):
     else:
         fname = wav_name
         offset = None
-
     try:
         with open_like_kaldi(fname, 'rb') as fd:
-            if offset is not None:
-                fd.seek(offset)
-            wd = wave.open(fd)
-            assert isinstance(wd, wave.Wave_read)
-            rate = wd.getframerate()
-            nchannels = wd.getnchannels()
-            nbytes = wd.getsampwidth()
-            if nbytes == 2:
-                dtype = dtype + '16'
-            elif nbytes == 4:
-                dtype = dtype + '32'
-            else:
-                raise ValueError('bytes_per_sample must be 2 or 4')
-            data = wd.readframes(wd.getnframes())
-            array = np.frombuffer(data, dtype=np.dtype(dtype))
-            if nchannels > 1:
-                array = array.reshape(-1, nchannels)
-            wd.close()
+            rate, array = read_wav(fd, offset, dtype=dtype)
     # If wave error found, try scipy.wavfile
     except wave.Error:
         with open_like_kaldi(fname, 'rb') as fd:
             if offset is not None:
                 fd.seek(offset)
             # scipy.io.wavfile doesn't support streaming input
-            fd2 = BytesIO(fd.read())
-            rate, array = wavfile.read(fd2)
-            del fd2
+            data = fd.read()
+        fd2 = BytesIO(data)
+        rate, array = wavfile.read(fd2)
+        del fd2
 
     if slices is not None:
         array = array[slices]
@@ -142,3 +125,31 @@ def _loader_wav(wav_name, return_rate=True, dtype='int'):
         return rate, array
     else:
         return array
+
+
+def read_wav(fd, offset=None, dtype='int', return_size=False):
+    if offset is not None:
+        fd.seek(offset)
+    wd = wave.open(fd)
+    assert isinstance(wd, wave.Wave_read)
+    rate = wd.getframerate()
+    nchannels = wd.getnchannels()
+    nbytes = wd.getsampwidth()
+    if nbytes == 2:
+        dtype = dtype + '16'
+    elif nbytes == 4:
+        dtype = dtype + '32'
+    elif nbytes == 8:
+        dtype = dtype + '64'
+    else:
+        raise ValueError('bytes_per_sample must be 2, 4 or 8')
+    data = wd.readframes(wd.getnframes())
+    size = 44 + len(data)
+    array = np.frombuffer(data, dtype=np.dtype(dtype))
+    if nchannels > 1:
+        array = array.reshape(-1, nchannels)
+
+    if return_size:
+        return (rate, array), size
+    else:
+        return rate, array

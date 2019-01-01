@@ -4,10 +4,16 @@ from io import TextIOBase
 import os
 import subprocess
 import sys
+import warnings
 
 from six import string_types
 
 PY3 = sys.version_info[0] == 3
+
+if PY3:
+    from collections.abc import MutableMapping
+else:
+    from collections import MutableMapping
 
 
 if PY3:
@@ -269,3 +275,37 @@ def parse_specifier(specifier):
             spec_dict[t] = True
 
     return spec_dict
+
+
+class LazyLoader(MutableMapping):
+    """Don't use this class directly"""
+    def __init__(self, loader):
+        self._dict = {}
+        self._loader = loader
+
+    def __repr__(self):
+        return 'LazyLoader [{} keys]'.format(len(self))
+
+    def __getitem__(self, key):
+        ark_name = self._dict[key]
+        try:
+            return self._loader(ark_name)
+        except Exception:
+            warnings.warn(
+                'An error happens at loading "{}"'.format(ark_name))
+            raise
+
+    def __setitem__(self, key, value):
+        self._dict[key] = value
+
+    def __delitem__(self, key):
+        del self._dict[key]
+
+    def __iter__(self):
+        return self._dict.__iter__()
+
+    def __len__(self):
+        return len(self._dict)
+
+    def __contains__(self, item):
+        return item in self._dict
