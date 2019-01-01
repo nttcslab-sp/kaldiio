@@ -95,10 +95,11 @@ class ReadHelper(object):
         if spec_dict['scp'] is not None and spec_dict['ark'] is not None:
             raise RuntimeError('Specify one of scp or ark in rspecifier')
         for k in spec_dict:
-            if spec_dict[k] and k not in ('scp', 'ark'):
+            if spec_dict[k] and k not in ('scp', 'ark', 'p'):
                 warnings.warn(
                     '{} option is given, but currently it never affects'
                     .format(k))
+        self.permissive = spec_dict['p']
 
         if spec_dict['scp'] is not None:
             self.scp = spec_dict['scp']
@@ -120,11 +121,33 @@ class ReadHelper(object):
 
     def __iter__(self):
         if self.scp:
-            for k, v in self.dict.items():
+            it = iter(self.dict.items())
+            while True:
+                try:
+                    k, v = next(it)
+                except StopIteration:
+                    break
+                except Exception:
+                    if self.permissive:
+                        # Continue if error happen
+                        continue
+                    else:
+                        raise
                 yield k, v
         else:
             with self.file as f:
-                for k, v in load_ark(f):
+                gen = load_ark(f)
+                while True:
+                    try:
+                        k, v = next(gen)
+                    except StopIteration:
+                        break
+                    except Exception:
+                        if self.permissive:
+                            # Stop if error happen
+                            break
+                        else:
+                            raise
                     yield k, v
             self.closed = True
 

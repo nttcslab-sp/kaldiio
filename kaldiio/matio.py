@@ -3,6 +3,7 @@ import os
 import re
 import struct
 import sys
+import warnings
 
 import numpy as np
 from six import binary_type
@@ -85,8 +86,8 @@ class LazyLoader(MutableMapping):
         try:
             return self._loader(ark_name)
         except Exception:
-            sys.stderr.write(
-                'Error at loading "{}"'.format(ark_name))
+            warnings.warn(
+                'An error happens at loading "{}"'.format(ark_name))
             raise
 
     def __setitem__(self, key, value):
