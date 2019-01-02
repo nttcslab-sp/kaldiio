@@ -159,7 +159,7 @@ with open_like_kaldi('gunzip -c file.ark.gz |', 'r') as f:
         ...
 ```
 
-This function can load both matrices of ark and vectors of ark and also, it can be both text and binary.
+- `load_ark` can load both matrices of ark and vectors of ark and also, it can be both text and binary.
 
 ### load_scp
 ```python
@@ -192,6 +192,7 @@ for key in d:
 array = kaldiio.load_mat('a.mat')
 array = kaldiio.load_mat('a.ark:1134')  # Seek and load
 ```
+- `load_mat` can load both kaldi-matrix and kaldi-vector
 
 ### save_ark
 ```python
@@ -221,8 +222,11 @@ with open_like_kaldi('| gzip a.ark.gz', 'w') as f:
 ```
 ### save_mat
 ```python
+# array.ndim must be 1 or 2
 array = kaldiio.save_mat('a.mat', array)
 ```
+- `load_mat` can save both kaldi-matrix and kaldi-vector
+
 
 ### open_like_kaldi
 
