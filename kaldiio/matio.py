@@ -21,6 +21,7 @@ from kaldiio.utils import open_like_kaldi
 from kaldiio.utils import open_or_fd
 from kaldiio.wavio import read_wav
 from kaldiio.wavio import read_wav_scipy
+from kaldiio.wavio import write_wav
 
 PY3 = sys.version_info[0] == 3
 
@@ -31,7 +32,7 @@ else:
 
 
 def load_scp(fname, endian='<', separator=None, as_bytes=False,
-             segments=None, return_rate=True):
+             segments=None):
     """Lazy loader for kaldi scp file.
 
     Args:
@@ -54,15 +55,15 @@ def load_scp(fname, endian='<', separator=None, as_bytes=False,
                 loader[token] = arkname.strip()
     else:
         return SegmentsExtractor(fname, separator=separator,
-                                 return_rate=return_rate, segments=segments)
+                                 segments=segments)
     return loader
 
 
 def load_wav_scp(fname,
                  segments=None,
-                 separator=None, return_rate=True):
+                 separator=None):
     warnings.warn('Use load_scp instead of load_wav_scp', DeprecationWarning)
-    return load_scp(fname, separator=separator, return_rate=return_rate)
+    return load_scp(fname, separator=separator)
 
 
 class SegmentsExtractor(Mapping):
@@ -76,10 +77,9 @@ class SegmentsExtractor(Mapping):
             "e.g. call-861225-A-0050-0065 call-861225-A 5.0 6.5\n"
     """
     def __init__(self, fname,
-                 segments=None, separator=' ', dtype='int', return_rate=True):
+                 segments=None, separator=' ', dtype='int'):
         self.wav_scp = fname
-        self.wav_loader = load_scp(self.wav_scp, separator=separator,
-                                   return_rate=return_rate)
+        self.wav_loader = load_scp(self.wav_scp, separator=separator)
 
         self.segments = segments
         self._segments_dict = {}
@@ -134,11 +134,13 @@ def load_mat(ark_name, endian='<', as_bytes=False):
             array = read_kaldi(fd, endian)
         else:
             array = fd.read()
+
     if slices is not None:
-        if isinstance(array, tuple):
+        if isinstance(array, (tuple, list)):
             array = (array[0], array[1][slices])
         else:
             array = array[slices]
+
     return array
 
 
@@ -188,17 +190,22 @@ def read_kaldi(fd, endian='<', return_size=False):
     """
     binary_flag = fd.read(4)
     assert isinstance(binary_flag, binary_type), type(binary_flag)
-    fd = MultiFileDescriptor(BytesIO(binary_flag), fd)
-    # Load as wave file
+
+    if hasattr(fd, 'seekable') and fd.seekable():
+        fd.seek(-4, 1)
+    else:
+        fd = MultiFileDescriptor(BytesIO(binary_flag), fd)
+
     if binary_flag[:4] == b'RIFF':
-        if fd.seekable():
-            array = read_wav_scipy(fd)
+        # array: Tuple[int, np.ndarray]
+        if hasattr(fd, 'seekable') and not fd.seekable():
+            array, size = read_wav_scipy(fd, return_size=True)
         else:
             try:
-                array = read_wav(fd)
+                array, size = read_wav(fd, return_size=True)
             # If wave error found, try scipy.wavfile
             except wave.Error:
-                array = read_wav_scipy(fd)
+                array, size = read_wav_scipy(fd, return_size=True)
 
     # Load as binary
     elif binary_flag[:2] == b'\0B':
@@ -399,11 +406,8 @@ def read_ascii_mat(fd, return_size=False):
         return array
 
 
-def save_ark(ark, array_dict, scp=None,
-             append=False, text=False,
-             as_bytes=False,
-             endian='<',
-             compression_method=None):
+def save_ark(ark, array_dict, scp=None, append=False, text=False,
+             as_bytes=False, endian='<', compression_method=None):
     """Write ark
 
     Args:
@@ -454,10 +458,14 @@ def save_ark(ark, array_dict, scp=None,
                 size += len(byte)
                 fd.write(byte)
             else:
-                if text:
-                    size += write_array_ascii(fd, array_dict[key], endian)
+                data = array_dict[key]
+                if isinstance(data, (list, tuple)):
+                    rate, array = data
+                    size += write_wav(fd, rate, array)
+                elif text:
+                    size += write_array_ascii(fd, data, endian)
                 else:
-                    size += write_array(fd, array_dict[key], endian,
+                    size += write_array(fd, data, endian,
                                         compression_method)
 
     # Write scp

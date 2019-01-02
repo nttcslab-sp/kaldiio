@@ -196,15 +196,26 @@ class MultiFileDescriptor(object):
     """
     def __init__(self, *fds):
         self.fds = fds
-        self._current_idx = 0
+
+        if self.seekable():
+            self.init_pos = [f.tell() for f in self.fds]
+        else:
+            self.init_pos = None
 
     def seek(self, offset, from_what=0):
+        if offset != 0:
+            raise NotImplementedError('offset={}'.format(offset))
+        if not self.seekable():
+            raise OSError
+        if from_what == 1:
+            offset += self.tell()
+            from_what = 0
+
         if from_what == 0:
-            for f in self.fds:
-                f.seek(offset, 0)
-                offset -= f.tell()
-                if offset == 0:
-                    break
+            for idx, f in enumerate(self.fds):
+                pos = self.init_pos[idx]
+                f.seek(pos + offset, 0)
+                offset -= (f.tell() - pos)
         else:
             raise NotImplementedError('from_what={}'.format(from_what))
 
@@ -212,19 +223,25 @@ class MultiFileDescriptor(object):
         return all(f.seekable() for f in self.fds)
 
     def tell(self):
-        return sum(f.tell() for f in self.fds)
+        if not self.seekable():
+            raise OSError
+        return sum(f.tell() - self.init_pos[idx]
+                   for idx, f in enumerate(self.fds))
 
-    def read(self, size):
-        if len(self.fds) <= self._current_idx:
-            return b''
-        string = self.fds[self._current_idx].read(size)
-        remain = size - len(string)
-        if remain > 0:
-            self._current_idx += 1
-            string2 = self.read(remain)
-            return string + string2
-        else:
-            return string
+    def read(self, size=-1):
+        remain = size
+        string = None
+        for f in self.fds:
+            if string is None:
+                string = f.read(remain)
+            else:
+                string += f.read(remain)
+            remain = size - len(string)
+            if remain == 0:
+                break
+            elif remain < 0:
+                remain = -1
+        return string
 
 
 def parse_specifier(specifier):
