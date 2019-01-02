@@ -115,7 +115,7 @@ with ReadHelper('scp:wav.scp') as reader:
         ...
 ```
 
-- v2.11.0: Removed `wav` option. You can load `wav.scp` without any addtional argument.
+　　　　- v2.11.0: Removed `wav` option. You can load `wav.scp` without any addtional argument.
 
 - Read wav.scp with segments
 
