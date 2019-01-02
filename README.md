@@ -20,10 +20,11 @@ The followings are supported.
   - Compressed Matrix for loading: CM1, CM2, CM3
   - Compressed Matrix for writing: All compressoin_method are supported: 1,2,3,4,5,6,7
 - Read/Write via a pipe: e.g. "ark: cat feats.ark |"
-- Loading wav.scp / wav.ark
+- Read/Write wav.scp / wav.ark
 
 The followings are **not supported**
 
+- Write in existing scp file
 - NNet2/NNet3 egs
 - Lattice file
 
@@ -109,17 +110,18 @@ with ReadHelper('ark: gunzip -c file.ark.gz |') as reader:
 
 ```python
 from kaldiio import ReadHelper
-with ReadHelper('scp:wav.scp', wav=True) as reader:
+with ReadHelper('scp:wav.scp') as reader:
     for key, (rate, array) in reader:
         ...
 ```
 
+- v2.11.0: Removed `wav` option. You can load `wav.scp` without any addtional argument.
 
 - Read wav.scp with segments
 
 ```python
 from kaldiio import ReadHelper
-with ReadHelper('scp:wav.scp', wav=True, segments='segments') as reader
+with ReadHelper('scp:wav.scp', segments='segments') as reader
     for key, (rate, array) in reader:
         ...
 ```
@@ -172,15 +174,18 @@ with open('a.scp') as fd:
 
 ### load_wav_scp
 ```python
-d = kaldiio.load_wav_scp('wav.scp')
+d = kaldiio.load_scp('wav.scp')
 for key in d:
     rate, array = d[key]
     
 # Supporting "segments"
-d = kaldiio.load_wav_scp('wav.scp', segments='segments')
+d = kaldiio.load_scp('wav.scp', segments='segments')
 for key in d:
     rate, array = d[key]
 ```
+
+- v2.11.0: `load_wav_scp` is deprecated now. You can load `wav.scp` using `load_scp`.
+
 
 ### load_mat
 ```python
