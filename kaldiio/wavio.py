@@ -1,8 +1,12 @@
+from __future__ import unicode_literals
+
 from io import BytesIO
 import wave
 
 import numpy as np
 from scipy.io import wavfile as wavfile
+
+from kaldiio.utils import seekable
 
 
 def read_wav(fd, offset=None, return_size=False):
@@ -35,7 +39,7 @@ def read_wav(fd, offset=None, return_size=False):
 
 
 def read_wav_scipy(fd, return_size=False):
-    if not fd.seekable():
+    if not seekable(fd):
         # scipy.io.wavfile doesn't support unseekable fd
         data = fd.read()
         fd = BytesIO(data)

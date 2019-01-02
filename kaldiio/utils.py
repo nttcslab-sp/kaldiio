@@ -220,7 +220,7 @@ class MultiFileDescriptor(object):
             raise NotImplementedError('from_what={}'.format(from_what))
 
     def seekable(self):
-        return all(f.seekable() for f in self.fds)
+        return all(seekable(f) for f in self.fds)
 
     def tell(self):
         if not self.seekable():
@@ -338,3 +338,20 @@ class LazyLoader(MutableMapping):
 
     def __contains__(self, item):
         return item in self._dict
+
+
+def seekable(f):
+    if hasattr(f, 'seekable'):
+        return f.seekable()
+
+    # For Py2
+    else:
+        if hasattr(f, 'tell'):
+            try:
+                f.tell()
+            except (IOError, OSError):
+                return False
+            else:
+                return True
+        else:
+            return False

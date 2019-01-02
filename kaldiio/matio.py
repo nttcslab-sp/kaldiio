@@ -1,4 +1,8 @@
+from __future__ import unicode_literals
+
 from functools import partial
+from io import BytesIO
+from io import StringIO
 import os
 import re
 import struct
@@ -8,8 +12,6 @@ import wave
 
 import numpy as np
 from six import binary_type
-from six import BytesIO
-from six.moves import cStringIO as StringIO
 from six import string_types
 
 from kaldiio.compression_header import GlobalHeader
@@ -19,6 +21,7 @@ from kaldiio.utils import LazyLoader
 from kaldiio.utils import MultiFileDescriptor
 from kaldiio.utils import open_like_kaldi
 from kaldiio.utils import open_or_fd
+from kaldiio.utils import seekable
 from kaldiio.wavio import read_wav
 from kaldiio.wavio import read_wav_scipy
 from kaldiio.wavio import write_wav
@@ -191,21 +194,22 @@ def read_kaldi(fd, endian='<', return_size=False):
     binary_flag = fd.read(4)
     assert isinstance(binary_flag, binary_type), type(binary_flag)
 
-    if hasattr(fd, 'seekable') and fd.seekable():
+    if seekable(fd):
         fd.seek(-4, 1)
     else:
         fd = MultiFileDescriptor(BytesIO(binary_flag), fd)
 
     if binary_flag[:4] == b'RIFF':
         # array: Tuple[int, np.ndarray]
-        if hasattr(fd, 'seekable') and not fd.seekable():
-            array, size = read_wav_scipy(fd, return_size=True)
-        else:
+        if seekable(fd):
             try:
+                # Don't give Multifiledescriptor to read_wav
                 array, size = read_wav(fd, return_size=True)
             # If wave error found, try scipy.wavfile
             except wave.Error:
                 array, size = read_wav_scipy(fd, return_size=True)
+        else:
+            array, size = read_wav_scipy(fd, return_size=True)
 
     # Load as binary
     elif binary_flag[:2] == b'\0B':
