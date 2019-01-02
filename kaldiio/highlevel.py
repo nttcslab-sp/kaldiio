@@ -5,7 +5,6 @@ from kaldiio.matio import load_scp
 from kaldiio.matio import save_ark
 from kaldiio.utils import open_like_kaldi
 from kaldiio.utils import parse_specifier
-from kaldiio.wavio import load_wav_scp
 
 
 class WriteHelper(object):
@@ -86,7 +85,7 @@ class ReadHelper(object):
     ...     numpy.testing.assert_array_equal(array_in, array_out)
 
     """
-    def __init__(self, wspecifier, wav=False, segments=None):
+    def __init__(self, wspecifier, segments=None):
         self.initialized = False
         self.scp = None
         self.closed = False
@@ -108,10 +107,7 @@ class ReadHelper(object):
 
         if self.scp:
             with open_like_kaldi(spec_dict['scp'], 'r') as f:
-                if wav:
-                    self.dict = load_wav_scp(f, segments=segments)
-                else:
-                    self.dict = load_scp(f)
+                self.dict = load_scp(f)
 
             self.file = None
         else:

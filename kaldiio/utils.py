@@ -126,10 +126,10 @@ def open_like_kaldi(name, mode='r'):
         else:
             return name
 
-    if name[-1] == '|':
-        return my_popen(name[:-1], mode)
-    elif name[0] == '|':
-        return my_popen(name[1:], mode)
+    if name.strip()[-1] == '|':
+        return my_popen(name.strip()[:-1], mode)
+    elif name.strip()[0] == '|':
+        return my_popen(name.strip()[1:], mode)
     elif name == '-' and 'r' in mode:
         if mode == 'rb' and PY3:
             return _stdstream_wrap(sys.stdin.buffer)
@@ -196,19 +196,52 @@ class MultiFileDescriptor(object):
     """
     def __init__(self, *fds):
         self.fds = fds
-        self._current_idx = 0
 
-    def read(self, size):
-        if len(self.fds) <= self._current_idx:
-            return b''
-        string = self.fds[self._current_idx].read(size)
-        remain = size - len(string)
-        if remain > 0:
-            self._current_idx += 1
-            string2 = self.read(remain)
-            return string + string2
+        if self.seekable():
+            self.init_pos = [f.tell() for f in self.fds]
         else:
-            return string
+            self.init_pos = None
+
+    def seek(self, offset, from_what=0):
+        if offset != 0:
+            raise NotImplementedError('offset={}'.format(offset))
+        if not self.seekable():
+            raise OSError
+        if from_what == 1:
+            offset += self.tell()
+            from_what = 0
+
+        if from_what == 0:
+            for idx, f in enumerate(self.fds):
+                pos = self.init_pos[idx]
+                f.seek(pos + offset, 0)
+                offset -= (f.tell() - pos)
+        else:
+            raise NotImplementedError('from_what={}'.format(from_what))
+
+    def seekable(self):
+        return all(seekable(f) for f in self.fds)
+
+    def tell(self):
+        if not self.seekable():
+            raise OSError
+        return sum(f.tell() - self.init_pos[idx]
+                   for idx, f in enumerate(self.fds))
+
+    def read(self, size=-1):
+        remain = size
+        string = None
+        for f in self.fds:
+            if string is None:
+                string = f.read(remain)
+            else:
+                string += f.read(remain)
+            remain = size - len(string)
+            if remain == 0:
+                break
+            elif remain < 0:
+                remain = -1
+        return string
 
 
 def parse_specifier(specifier):
@@ -226,9 +259,6 @@ def parse_specifier(specifier):
     file.ark
 
     """
-    if not isinstance(specifier, str):
-        raise TypeError(
-            'Argument must be str, but got {}'.format(type(specifier)))
     sp = specifier.split(':', 1)
     if len(sp) != 2:
         if ':' not in specifier:
@@ -308,3 +338,20 @@ class LazyLoader(MutableMapping):
 
     def __contains__(self, item):
         return item in self._dict
+
+
+def seekable(f):
+    if hasattr(f, 'seekable'):
+        return f.seekable()
+
+    # For Py2
+    else:
+        if hasattr(f, 'tell'):
+            try:
+                f.tell()
+            except (IOError, OSError):
+                return False
+            else:
+                return True
+        else:
+            return False
