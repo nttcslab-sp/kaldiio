@@ -230,7 +230,7 @@ array = kaldiio.save_mat('a.mat', array)
 
 ### open_like_kaldi
 
-``kaldiio.open_like_kaldi`` maybe a useful tool if you are familiar with Kaldi. This functions can performs as following,
+``kaldiio.open_like_kaldi`` maybe a useful tool if you are familiar with Kaldi. This function can performs as following,
 
 ```python
 from kaldiio import open_like_kaldi
