@@ -107,7 +107,7 @@ class ReadHelper(object):
 
         if self.scp:
             with open_like_kaldi(spec_dict['scp'], 'r') as f:
-                self.dict = load_scp(f)
+                self.dict = load_scp(f, segments=segments)
 
             self.file = None
         else:
@@ -188,7 +188,7 @@ class ReadHelper(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if not self.scp and not self.closed:
-            self.file.close()
+            self.close()
 
     def close(self):
         if self.initialized and not self.scp and not self.closed:

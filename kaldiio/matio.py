@@ -80,7 +80,7 @@ class SegmentsExtractor(Mapping):
             "e.g. call-861225-A-0050-0065 call-861225-A 5.0 6.5\n"
     """
     def __init__(self, fname,
-                 segments=None, separator=' ', dtype='int'):
+                 segments=None, separator=None, dtype='int'):
         self.wav_scp = fname
         self.wav_loader = load_scp(self.wav_scp, separator=separator)
 
@@ -88,7 +88,7 @@ class SegmentsExtractor(Mapping):
         self._segments_dict = {}
         with open(self.segments) as f:
             for l in f:
-                sps = l.strip().split(' ')
+                sps = l.strip().split(separator)
                 if len(sps) != 4:
                     raise RuntimeError('Format is invalid: {}'.format(l))
                 uttid, recodeid, st, et = sps
