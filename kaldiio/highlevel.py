@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import warnings
 
 from kaldiio.matio import load_ark
@@ -89,6 +91,7 @@ class ReadHelper(object):
         self.initialized = False
         self.scp = None
         self.closed = False
+        self.segments = segments
 
         spec_dict = parse_specifier(wspecifier)
         if spec_dict['scp'] is not None and spec_dict['ark'] is not None:
@@ -107,7 +110,7 @@ class ReadHelper(object):
 
         if self.scp:
             with open_like_kaldi(spec_dict['scp'], 'r') as f:
-                self.dict = load_scp(f)
+                self.dict = load_scp(f, segments=segments)
 
             self.file = None
         else:
@@ -117,7 +120,11 @@ class ReadHelper(object):
 
     def __iter__(self):
         if self.scp:
-            it = iter(self.dict.items())
+            if self.segments is not None:
+                it = self.dict.generator()
+            else:
+                it = iter(self.dict.items())
+
             while True:
                 try:
                     k, v = next(it)
@@ -125,17 +132,18 @@ class ReadHelper(object):
                     break
                 except Exception:
                     if self.permissive:
-                        # Continue if error happen
-                        continue
+                        # Stop if error happen
+                        break
                     else:
                         raise
                 yield k, v
+
         else:
             with self.file as f:
-                gen = load_ark(f)
+                it = load_ark(f)
                 while True:
                     try:
-                        k, v = next(gen)
+                        k, v = next(it)
                     except StopIteration:
                         break
                     except Exception:
@@ -188,7 +196,7 @@ class ReadHelper(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if not self.scp and not self.closed:
-            self.file.close()
+            self.close()
 
     def close(self):
         if self.initialized and not self.scp and not self.closed:

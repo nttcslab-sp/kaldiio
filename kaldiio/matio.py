@@ -45,6 +45,7 @@ def load_scp(fname, endian='<', separator=None, as_bytes=False,
         as_bytes (bool): Read as raw bytes string
         segments (str): The path of segments
     """
+    assert endian in ('<', '>'), endian
     load_func = partial(load_mat, endian=endian, as_bytes=as_bytes)
     if segments is None:
         loader = LazyLoader(load_func)
@@ -79,8 +80,7 @@ class SegmentsExtractor(Mapping):
             "<segment-id> <recording-id> <start-time> <end-time>\n"
             "e.g. call-861225-A-0050-0065 call-861225-A 5.0 6.5\n"
     """
-    def __init__(self, fname,
-                 segments=None, separator=' ', dtype='int'):
+    def __init__(self, fname, segments=None, separator=None):
         self.wav_scp = fname
         self.wav_loader = load_scp(self.wav_scp, separator=separator)
 
@@ -88,7 +88,7 @@ class SegmentsExtractor(Mapping):
         self._segments_dict = {}
         with open(self.segments) as f:
             for l in f:
-                sps = l.strip().split(' ')
+                sps = l.strip().split(separator)
                 if len(sps) != 4:
                     raise RuntimeError('Format is invalid: {}'.format(l))
                 uttid, recodeid, st, et = sps
@@ -97,6 +97,24 @@ class SegmentsExtractor(Mapping):
                 if recodeid not in self.wav_loader:
                     raise RuntimeError(
                         'Not found "{}" in {}'.format(recodeid, self.wav_scp))
+
+    def generator(self):
+        recodeid_counter = {}
+        for utt, (recodeid, st, et) in self._segments_dict.items():
+            recodeid_counter[recodeid] = recodeid_counter.get(recodeid, 0) + 1
+
+        cached = {}
+        for utt, (recodeid, st, et) in self._segments_dict.items():
+            if recodeid not in cached:
+                cached[recodeid] = self.wav_loader[recodeid]
+            array = cached[recodeid]
+
+            # Keep array until the last query
+            recodeid_counter[recodeid] -= 1
+            if recodeid_counter[recodeid] == 0:
+                cached.pop(recodeid)
+
+            yield utt, self._return(array, st, et)
 
     def __iter__(self):
         return iter(self._segments_dict)
@@ -109,7 +127,15 @@ class SegmentsExtractor(Mapping):
 
     def __getitem__(self, key):
         recodeid, st, et = self._segments_dict[key]
-        rate, array = self.wav_loader[recodeid]
+        array = self.wav_loader[recodeid]
+        return self._return(array, st, et)
+
+    def _return(self, array, st, et):
+        if isinstance(array, (tuple, list)):
+            rate, array = array
+        else:
+            raise RuntimeError('{} is not wav.scp?'.format(self.wav_scp))
+
         # Convert starting time of the segment to corresponding sample number.
         # If end time is -1 then use the whole file starting from start time.
         if et != -1:
@@ -119,6 +145,7 @@ class SegmentsExtractor(Mapping):
 
 
 def load_mat(ark_name, endian='<', as_bytes=False):
+    assert endian in ('<', '>'), endian
     slices = None
     if ':' in ark_name:
         fname, offset = ark_name.split(':', 1)
@@ -148,6 +175,7 @@ def load_mat(ark_name, endian='<', as_bytes=False):
 
 
 def load_ark(fname, return_position=False, endian='<'):
+    assert endian in ('<', '>'), endian
     size = 0
     with open_or_fd(fname, 'rb') as fd:
         while True:
@@ -191,6 +219,7 @@ def read_kaldi(fd, endian='<', return_size=False):
         endian (str):
         return_size (bool):
     """
+    assert endian in ('<', '>'), endian
     binary_flag = fd.read(4)
     assert isinstance(binary_flag, binary_type), type(binary_flag)
 
@@ -201,14 +230,10 @@ def read_kaldi(fd, endian='<', return_size=False):
 
     if binary_flag[:4] == b'RIFF':
         # array: Tuple[int, np.ndarray]
-        if seekable(fd):
-            try:
-                # Don't give Multifiledescriptor to read_wav
-                array, size = read_wav(fd, return_size=True)
-            # If wave error found, try scipy.wavfile
-            except wave.Error:
-                array, size = read_wav_scipy(fd, return_size=True)
-        else:
+        try:
+            array, size = read_wav(fd, return_size=True)
+        # If wave error found, try scipy.wavfile
+        except wave.Error:
             array, size = read_wav_scipy(fd, return_size=True)
 
     # Load as binary

@@ -11,7 +11,6 @@ from kaldiio.utils import seekable
 
 def read_wav(fd, offset=None, return_size=False):
     wd = wave.open(fd)
-    assert isinstance(wd, wave.Wave_read)
     rate = wd.getframerate()
     nchannels = wd.getnchannels()
     nbytes = wd.getsampwidth()
