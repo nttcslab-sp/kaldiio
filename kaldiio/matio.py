@@ -79,8 +79,7 @@ class SegmentsExtractor(Mapping):
             "<segment-id> <recording-id> <start-time> <end-time>\n"
             "e.g. call-861225-A-0050-0065 call-861225-A 5.0 6.5\n"
     """
-    def __init__(self, fname,
-                 segments=None, separator=None, dtype='int'):
+    def __init__(self, fname, segments=None, separator=None):
         self.wav_scp = fname
         self.wav_loader = load_scp(self.wav_scp, separator=separator)
 
