@@ -201,14 +201,10 @@ def read_kaldi(fd, endian='<', return_size=False):
 
     if binary_flag[:4] == b'RIFF':
         # array: Tuple[int, np.ndarray]
-        if seekable(fd):
-            try:
-                # Don't give Multifiledescriptor to read_wav
-                array, size = read_wav(fd, return_size=True)
-            # If wave error found, try scipy.wavfile
-            except wave.Error:
-                array, size = read_wav_scipy(fd, return_size=True)
-        else:
+        try:
+            array, size = read_wav(fd, return_size=True)
+        # If wave error found, try scipy.wavfile
+        except wave.Error:
             array, size = read_wav_scipy(fd, return_size=True)
 
     # Load as binary

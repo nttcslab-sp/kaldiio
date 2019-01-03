@@ -203,10 +203,13 @@ class MultiFileDescriptor(object):
             self.init_pos = None
 
     def seek(self, offset, from_what=0):
+        if not self.seekable():
+            if PY3:
+                raise OSError
+            else:
+                raise IOError
         if offset != 0:
             raise NotImplementedError('offset={}'.format(offset))
-        if not self.seekable():
-            raise OSError
         if from_what == 1:
             offset += self.tell()
             from_what = 0
@@ -224,7 +227,10 @@ class MultiFileDescriptor(object):
 
     def tell(self):
         if not self.seekable():
-            raise OSError
+            if PY3:
+                raise OSError
+            else:
+                raise IOError
         return sum(f.tell() - self.init_pos[idx]
                    for idx, f in enumerate(self.fds))
 
