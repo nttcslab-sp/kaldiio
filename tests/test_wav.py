@@ -92,3 +92,39 @@ def test_wavark_stream(tmpdir):
         rate, test = d['utt2']
         assert rate == 8000
         np.testing.assert_array_equal(array2, test)
+
+
+def test_segments(tmpdir):
+    # Create wav.scp
+    path = tmpdir.mkdir('test')
+    wavscp = path.join('wav.scp').strpath
+
+    rate = 500
+    with open(wavscp, 'w') as f:
+        wav = path.join('0.wav').strpath
+        array0 = np.random.randint(0, 10, 2000, dtype=np.int16)
+        write_wav(wav, rate, array0)
+        f.write('wav0 {}\n'.format(wav))
+
+        wav = path.join('1.wav').strpath
+        array1 = np.random.randint(0, 10, 2000, dtype=np.int16)
+        write_wav(wav, rate, array1)
+        f.write('wav1 {}\n'.format(wav))
+
+    # Create segments
+    segments = path.join('segments').strpath
+    with open(segments, 'w') as f:
+        f.write('utt1 wav0 0.1 0.2\n')
+        f.write('utt2 wav0 0.4 0.6\n')
+        f.write('utt3 wav1 0.4 0.5\n')
+        f.write('utt4 wav1 0.6 0.8\n')
+    d = load_scp(wavscp, segments=segments)
+
+    np.testing.assert_array_equal(
+        d['utt1'][1], array0[int(0.1 * rate):int(0.2 * rate)])
+    np.testing.assert_array_equal(
+        d['utt2'][1], array0[int(0.4 * rate):int(0.6 * rate)])
+    np.testing.assert_array_equal(
+        d['utt3'][1], array1[int(0.4 * rate):int(0.5 * rate)])
+    np.testing.assert_array_equal(
+        d['utt4'][1], array1[int(0.6 * rate):int(0.8 * rate)])

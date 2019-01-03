@@ -5,6 +5,7 @@ from kaldiio.highlevel import WriteHelper
 from kaldiio.matio import load_ark
 from kaldiio.matio import load_scp
 from kaldiio.matio import save_ark
+from kaldiio.wavio import write_wav
 
 
 def test_read_helper(tmpdir):
@@ -67,6 +68,44 @@ def test_write_helper_ascii(tmpdir):
     from_scp = load_scp('{p}/out.scp'.format(p=path))
     _compare_allclose(from_ark, d)
     _compare_allclose(from_scp, d)
+
+
+def test_segments(tmpdir):
+    # Create wav.scp
+    path = tmpdir.mkdir('test')
+    wavscp = path.join('wav.scp').strpath
+
+    rate = 500
+    with open(wavscp, 'w') as f:
+        wav = path.join('0.wav').strpath
+        array0 = numpy.random.randint(0, 10, 2000, dtype=numpy.int16)
+        write_wav(wav, rate, array0)
+        f.write('wav0 {}\n'.format(wav))
+
+        wav = path.join('1.wav').strpath
+        array1 = numpy.random.randint(0, 10, 2000, dtype=numpy.int16)
+        write_wav(wav, rate, array1)
+        f.write('wav1 {}\n'.format(wav))
+
+    # Create segments
+    segments = path.join('segments').strpath
+    with open(segments, 'w') as f:
+        f.write('utt1 wav0 0.1 0.2\n')
+        f.write('utt2 wav0 0.4 0.6\n')
+        f.write('utt3 wav1 0.4 0.5\n')
+        f.write('utt4 wav1 0.6 0.8\n')
+
+    with ReadHelper('scp:{}'.format(wavscp), segments=segments) as r:
+        d = {k: a for k, a in r}
+
+        numpy.testing.assert_array_equal(
+            d['utt1'][1], array0[int(0.1 * rate):int(0.2 * rate)])
+        numpy.testing.assert_array_equal(
+            d['utt2'][1], array0[int(0.4 * rate):int(0.6 * rate)])
+        numpy.testing.assert_array_equal(
+            d['utt3'][1], array1[int(0.4 * rate):int(0.5 * rate)])
+        numpy.testing.assert_array_equal(
+            d['utt4'][1], array1[int(0.6 * rate):int(0.8 * rate)])
 
 
 def _compare(d1, d2):

@@ -45,6 +45,7 @@ def load_scp(fname, endian='<', separator=None, as_bytes=False,
         as_bytes (bool): Read as raw bytes string
         segments (str): The path of segments
     """
+    assert endian in ('<', '>'), endian
     load_func = partial(load_mat, endian=endian, as_bytes=as_bytes)
     if segments is None:
         loader = LazyLoader(load_func)
@@ -97,6 +98,24 @@ class SegmentsExtractor(Mapping):
                     raise RuntimeError(
                         'Not found "{}" in {}'.format(recodeid, self.wav_scp))
 
+    def generator(self):
+        recodeid_counter = {}
+        for utt, (recodeid, st, et) in self._segments_dict.items():
+            recodeid_counter[recodeid] = recodeid_counter.get(recodeid, 0) + 1
+
+        cached = {}
+        for utt, (recodeid, st, et) in self._segments_dict.items():
+            if recodeid not in cached:
+                cached[recodeid] = self.wav_loader[recodeid]
+            array = cached[recodeid]
+
+            # Keep array until the last query
+            recodeid_counter[recodeid] -= 1
+            if recodeid_counter[recodeid] == 0:
+                cached.pop(recodeid)
+
+            yield utt, self._return(array, st, et)
+
     def __iter__(self):
         return iter(self._segments_dict)
 
@@ -108,7 +127,15 @@ class SegmentsExtractor(Mapping):
 
     def __getitem__(self, key):
         recodeid, st, et = self._segments_dict[key]
-        rate, array = self.wav_loader[recodeid]
+        array = self.wav_loader[recodeid]
+        return self._return(array, st, et)
+
+    def _return(self, array, st, et):
+        if isinstance(array, (tuple, list)):
+            rate, array = array
+        else:
+            raise RuntimeError('{} is not wav.scp?'.format(self.wav_scp))
+
         # Convert starting time of the segment to corresponding sample number.
         # If end time is -1 then use the whole file starting from start time.
         if et != -1:
@@ -118,6 +145,7 @@ class SegmentsExtractor(Mapping):
 
 
 def load_mat(ark_name, endian='<', as_bytes=False):
+    assert endian in ('<', '>'), endian
     slices = None
     if ':' in ark_name:
         fname, offset = ark_name.split(':', 1)
@@ -147,6 +175,7 @@ def load_mat(ark_name, endian='<', as_bytes=False):
 
 
 def load_ark(fname, return_position=False, endian='<'):
+    assert endian in ('<', '>'), endian
     size = 0
     with open_or_fd(fname, 'rb') as fd:
         while True:
@@ -190,6 +219,7 @@ def read_kaldi(fd, endian='<', return_size=False):
         endian (str):
         return_size (bool):
     """
+    assert endian in ('<', '>'), endian
     binary_flag = fd.read(4)
     assert isinstance(binary_flag, binary_type), type(binary_flag)
 
