@@ -114,6 +114,9 @@ class ReadHelper(object):
 
             self.file = None
         else:
+            if segments is not None:
+                raise ValueError(
+                    'Not supporting "segments" argument with ark file')
             self.dict = None
             self.file = open_like_kaldi(spec_dict['ark'], 'rb')
         self.initialized = True
