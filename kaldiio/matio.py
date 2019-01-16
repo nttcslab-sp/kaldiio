@@ -67,7 +67,7 @@ def load_wav_scp(fname,
                  segments=None,
                  separator=None):
     warnings.warn('Use load_scp instead of load_wav_scp', DeprecationWarning)
-    return load_scp(fname, separator=separator)
+    return load_scp(fname, separator=separator, segments=segments)
 
 
 class SegmentsExtractor(Mapping):
