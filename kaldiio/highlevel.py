@@ -123,7 +123,8 @@ class ReadHelper(object):
             if self.segments is not None:
                 it = self.dict.generator()
             else:
-                it = iter(self.dict.items())
+                # Don't use items() for python2-compatibility
+                it = ((k, self.dict[k]) for k in self.dict)
 
             while True:
                 try:
