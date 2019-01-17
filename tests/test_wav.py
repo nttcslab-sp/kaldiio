@@ -9,8 +9,7 @@ from kaldiio.utils import open_like_kaldi
 from kaldiio.wavio import write_wav
 
 
-@pytest.mark.parametrize('func', 
-                         [load_scp, load_scp_sequential])
+@pytest.mark.parametrize('func', [load_scp, load_scp_sequential])
 def test_load_wav(tmpdir, func):
     path = tmpdir.mkdir('test')
     wav = path.join('a.wav').strpath
@@ -25,8 +24,7 @@ def test_load_wav(tmpdir, func):
     np.testing.assert_array_equal(array, array2)
 
 
-@pytest.mark.parametrize('func', 
-                         [load_scp, load_scp_sequential])
+@pytest.mark.parametrize('func', [load_scp, load_scp_sequential])
 def test_read_write_wav(tmpdir, func):
     path = tmpdir.mkdir('test')
     ark = path.join('a.ark').strpath
@@ -57,8 +55,7 @@ def test_read_write_wav(tmpdir, func):
     np.testing.assert_array_equal(array2, test)
 
 
-@pytest.mark.parametrize('func', 
-                         [load_scp, load_scp_sequential])
+@pytest.mark.parametrize('func', [load_scp, load_scp_sequential])
 def test_scpwav_stream(tmpdir, func):
     path = tmpdir.mkdir('test')
     wav = path.join('aaa.wav').strpath
@@ -102,8 +99,7 @@ def test_wavark_stream(tmpdir):
         np.testing.assert_array_equal(array2, test)
 
 
-@pytest.mark.parametrize('func', 
-                         [load_scp, load_scp_sequential])
+@pytest.mark.parametrize('func', [load_scp, load_scp_sequential])
 def test_segments(tmpdir, func):
     # Create wav.scp
     path = tmpdir.mkdir('test')
