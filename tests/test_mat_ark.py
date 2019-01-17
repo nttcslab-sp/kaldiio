@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 import kaldiio
-
+from kaldiio.matio import _parse_arkpath
 
 arkdir = os.path.join(os.path.dirname(__file__), 'arks')
 
@@ -40,6 +40,22 @@ def test_write_read(tmpdir, endian):
     _compare(d2, origin)
     _compare(d5, origin)
     _compare(d6, origin)
+
+
+@pytest.mark.parametrize('endian', ['<', '>'])
+def test_write_read_sequential(tmpdir, endian):
+    path = tmpdir.mkdir('test')
+
+    a = np.random.rand(1000, 120).astype(np.float32)
+    b = np.random.rand(10, 120).astype(np.float32)
+    origin = {'a': a, 'b': b}
+    kaldiio.save_ark(path.join('a.ark').strpath, origin,
+                     scp=path.join('b.scp').strpath, endian=endian)
+
+    d5 = {k: v
+          for k, v in kaldiio.load_scp_sequential(
+              path.join('b.scp').strpath, endian=endian)}
+    _compare(d5, origin)
 
 
 def test_write_read_zerosize_array(tmpdir):
@@ -187,9 +203,18 @@ def test_append_mode(tmpdir):
 def test_write_read_mat(tmpdir, endian):
     path = tmpdir.mkdir('test')
     valid = np.random.rand(1000, 120).astype(np.float32)
-    kaldiio.save_mat(path.join('a.mat').strpath, valid)
-    test = kaldiio.load_mat(path.join('a.mat').strpath)
+    kaldiio.save_mat(path.join('a.mat').strpath, valid, endian=endian)
+    test = kaldiio.load_mat(path.join('a.mat').strpath, endian=endian)
     np.testing.assert_array_equal(test, valid)
+
+
+def test__parse_arkpath():
+    assert _parse_arkpath('a.ark') == ('a.ark', None, None)
+    assert _parse_arkpath('a.ark:12') == ('a.ark', 12, None)
+    assert _parse_arkpath('a.ark:12[3:4]') == \
+        ('a.ark', 12, (slice(3, 4, None),))
+    assert _parse_arkpath('cat "fo:o.ark" |') == \
+        ('cat "fo:o.ark" |', None, None)
 
 
 def _compare(d1, d2):

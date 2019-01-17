@@ -9,7 +9,7 @@ from scipy.io import wavfile as wavfile
 from kaldiio.utils import seekable
 
 
-def read_wav(fd, offset=None, return_size=False):
+def read_wav(fd, return_size=False):
     wd = wave.open(fd)
     rate = wd.getframerate()
     nchannels = wd.getnchannels()

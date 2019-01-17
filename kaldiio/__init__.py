@@ -4,6 +4,7 @@ import pkg_resources
 from kaldiio.matio import load_ark
 from kaldiio.matio import load_mat
 from kaldiio.matio import load_scp
+from kaldiio.matio import load_scp_sequential
 from kaldiio.matio import load_wav_scp
 from kaldiio.matio import save_ark
 from kaldiio.matio import save_mat

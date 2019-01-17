@@ -129,7 +129,6 @@ with ReadHelper('scp:wav.scp', segments='segments') as reader
 - Read from stdin
 
 ```python
-import numpy
 from kaldiio import ReadHelper
 with ReadHelper('ark:-') as reader:
     for key, array in reader:
@@ -138,6 +137,9 @@ with ReadHelper('ark:-') as reader:
 
 
 ## More low level API
+Basically, `kaldiio` doesn't distinguish the API for each kaldi-objects, i.e. 
+`Kaldi-Matrix`, `Kaldi-Vector`, not depending whether it is binary or text, or compressed or not, 
+can be handled by the same API.
 
 ### load_ark
 ```python
@@ -162,14 +164,36 @@ with open_like_kaldi('gunzip -c file.ark.gz |', 'r') as f:
 - `load_ark` can load both matrices of ark and vectors of ark and also, it can be both text and binary.
 
 ### load_scp
+`load_scp` creates "lazy dict", i.e. 
+The data are loaded in memory when accessing the element.
+
 ```python
-# === load_scp can load as lazy dict
+import kaldiio
+
 d = kaldiio.load_scp('a.scp')
 for key in d:
     array = d[key]
     
 with open('a.scp') as fd:
     kaldiio.load_scp(fd)
+    
+d = kaldiio.load_scp('data/train/wav.scp', segments='data/train/segments')
+for key in d:
+    rate, array = d[key]
+```
+
+### load_scp_sequential (from v2.13.0)
+
+`load_scp_sequential` creates "generator" as same as `load_ark`.
+If you don't need random-accessing for each elements 
+and use just to iterate for whole data, 
+then this method possibly performs faster than `load_scp`.
+
+```python
+import kaldiio
+d = kaldiio.load_scp_sequential('a.scp')
+for key, array in d:
+    ...
 ```
 
 ### load_wav_scp
@@ -179,20 +203,23 @@ for key in d:
     rate, array = d[key]
     
 # Supporting "segments"
-d = kaldiio.load_scp('wav.scp', segments='segments')
+d = kaldiio.load_scp('data/train/wav.scp', segments='data/train/segments')
 for key in d:
     rate, array = d[key]
 ```
 
-- v2.11.0: `load_wav_scp` is deprecated now. You can load `wav.scp` using `load_scp`.
+- v2.11.0: `load_wav_scp` is deprecated now. Use `load_scp`.
 
 
 ### load_mat
 ```python
 array = kaldiio.load_mat('a.mat')
 array = kaldiio.load_mat('a.ark:1134')  # Seek and load
+
+# If the file is wav, gets Tuple[int, array]
+rate, array = kaldiio.load_mat('a.wav') 
 ```
-- `load_mat` can load both kaldi-matrix and kaldi-vector
+- `load_mat` can load both kaldi-matrix, kaldi-vector, and wave
 
 ### save_ark
 ```python

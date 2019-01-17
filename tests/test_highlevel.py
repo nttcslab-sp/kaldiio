@@ -70,6 +70,31 @@ def test_write_helper_ascii(tmpdir):
     _compare_allclose(from_scp, d)
 
 
+def test_scpwav_stream(tmpdir):
+    path = tmpdir.mkdir('test')
+    wav = path.join('aaa.wav').strpath
+    wav2 = path.join('bbb.wav').strpath
+    scp = path.join('wav.scp').strpath
+
+    # Write as pcm16
+    array = numpy.random.randint(0, 10, 10, dtype=numpy.int16)
+    write_wav(wav, 8000, array)
+
+    array2 = numpy.random.randint(0, 10, 10, dtype=numpy.int16)
+    write_wav(wav2, 8000, array2)
+
+    valid = {'aaa': array, 'bbb': array2}
+
+    with open(scp, 'w') as f:
+        f.write('aaa cat {wav} |\n'.format(wav=wav))
+        f.write('bbb cat {wav} |\n'.format(wav=wav2))
+
+    with ReadHelper('scp:{}'.format(scp)) as r:
+        for k, (rate, array) in r:
+            assert rate == 8000
+            numpy.testing.assert_array_equal(array, valid[k])
+
+
 def test_segments(tmpdir):
     # Create wav.scp
     path = tmpdir.mkdir('test')
