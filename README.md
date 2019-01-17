@@ -34,6 +34,17 @@ The followings are **not supported**
 pip install git+https://github.com/nttcslab-sp/kaldiio
 ```
 
+## Similar project
+
+- https://github.com/vesis84/kaldi-io-for-python
+ - `kaldiio`is based on this module, but supporting more features than it
+- https://github.com/funcwj/kaldi-python-io
+ - Pure python>=3.6
+- https://github.com/janchorowski/kaldi-python/
+ - Python-C++ Binding to Kaldi library
+- https://github.com/pykaldi/pykaldi
+ - Python wrapper of Kaldi: It looks nice. I recommend this if you aren't particular about pure python.
+ 
 
 ## Usage
 ### WriteHelper
