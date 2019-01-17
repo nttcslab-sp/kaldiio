@@ -102,7 +102,7 @@ def test_write_read_multiark_sequential(tmpdir, endian):
 
     d5 = {k: v
           for k, v in kaldiio.load_scp_sequential(
-        path.join('b.scp').strpath, endian=endian)}
+              path.join('b.scp').strpath, endian=endian)}
     _compare(d5, origin)
 
 
