@@ -6,11 +6,24 @@ from kaldiio.matio import load_scp
 from kaldiio.matio import load_scp_sequential
 from kaldiio.matio import save_ark
 from kaldiio.utils import open_like_kaldi
+from kaldiio.wavio import read_wav
+from kaldiio.wavio import read_wav_scipy
 from kaldiio.wavio import write_wav
 
 
+@pytest.mark.parametrize('func', [read_wav, read_wav_scipy])
+def test_read_wav(tmpdir, func):
+    path = tmpdir.mkdir('test')
+    wav = path.join('a.wav').strpath
+    # Write as pcm16
+    array = np.random.randint(0, 10, 10, dtype=np.int16)
+    write_wav(wav, 8000, array)
+    rate, array2 = func(wav)
+    np.testing.assert_array_equal(array, array2)
+
+
 @pytest.mark.parametrize('func', [load_scp, load_scp_sequential])
-def test_load_wav(tmpdir, func):
+def test_load_wav_scp(tmpdir, func):
     path = tmpdir.mkdir('test')
     wav = path.join('a.wav').strpath
     scp = path.join('wav.scp').strpath
