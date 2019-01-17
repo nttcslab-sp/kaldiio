@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 import warnings
 
 from kaldiio.matio import load_ark
-from kaldiio.matio import load_scp
+from kaldiio.matio import load_scp_sequential
 from kaldiio.matio import save_ark
 from kaldiio.utils import open_like_kaldi
 from kaldiio.utils import parse_specifier
@@ -91,6 +91,7 @@ class ReadHelper(object):
         self.initialized = False
         self.scp = None
         self.closed = False
+        self.generator = None
         self.segments = segments
 
         spec_dict = parse_specifier(wspecifier)
@@ -109,29 +110,22 @@ class ReadHelper(object):
             self.scp = False
 
         if self.scp:
-            with open_like_kaldi(spec_dict['scp'], 'r') as f:
-                self.dict = load_scp(f, segments=segments)
+            self.generator = load_scp_sequential(
+                spec_dict['scp'], segments=segments)
 
             self.file = None
         else:
             if segments is not None:
                 raise ValueError(
                     'Not supporting "segments" argument with ark file')
-            self.dict = None
             self.file = open_like_kaldi(spec_dict['ark'], 'rb')
         self.initialized = True
 
     def __iter__(self):
         if self.scp:
-            if self.segments is not None:
-                it = self.dict.generator()
-            else:
-                # Don't use items() for python2-compatibility
-                it = ((k, self.dict[k]) for k in self.dict)
-
             while True:
                 try:
-                    k, v = next(it)
+                    k, v = next(self.generator)
                 except StopIteration:
                     break
                 except Exception:
@@ -158,42 +152,6 @@ class ReadHelper(object):
                             raise
                     yield k, v
             self.closed = True
-
-    def __len__(self):
-        if not self.scp:
-            raise RuntimeError('__getitem__() is supported only when scp mode')
-        return len(self.dict)
-
-    def __contains__(self, item):
-        if not self.scp:
-            raise RuntimeError(
-                '__contains__() is supported only when scp mode')
-        return item in self.dict
-
-    def __getitem__(self, item):
-        if not self.scp:
-            raise RuntimeError('__getitem__() is supported only when scp mode')
-        return self.dict[item]
-
-    def get(self, item, default=None):
-        if not self.scp:
-            raise RuntimeError('get() is supported only when scp mode')
-        return self.dict.get(item, default)
-
-    def keys(self):
-        if not self.scp:
-            raise RuntimeError('keys() is supported only when scp mode')
-        return self.dict.keys()
-
-    def items(self):
-        if not self.scp:
-            raise RuntimeError('items() is supported only when scp mode')
-        return self.dict.items()
-
-    def values(self):
-        if not self.scp:
-            raise RuntimeError('values() is supported only when scp mode')
-        return self.dict.values()
 
     def __enter__(self):
         return self
