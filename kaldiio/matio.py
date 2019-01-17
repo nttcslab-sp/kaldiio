@@ -86,6 +86,7 @@ def load_scp_sequential(fname, endian='<', separator=None, as_bytes=False,
                         raise ValueError(
                             'Invalid line is found:\n>   {}'.format(line))
                     token, arkname = seps
+                    arkname = arkname.strip()
 
                     ark, offset, slices = _parse_arkpath(arkname)
 
