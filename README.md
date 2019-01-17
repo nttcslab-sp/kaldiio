@@ -8,7 +8,7 @@ A pure python module for reading and writing kaldi ark files
 ## Similar project
 
 - https://github.com/vesis84/kaldi-io-for-python
-   - `kaldiio` is based on this module, but supporting more features than it
+   - `kaldiio` is based on this module, but `kaldiio` supports more features than it
 - https://github.com/funcwj/kaldi-python-io
    - Pure python>=3.6. `nnet3-egs`is also supported.
 - https://github.com/pykaldi/pykaldi
