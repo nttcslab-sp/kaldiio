@@ -137,11 +137,14 @@ with ReadHelper('ark:-') as reader:
 
 
 ## More low level API
+`WriteHelper` and `ReadHelper` are high level wrapper of the following API to support kaldi style arguments.
+
+### load_ark
 Basically, `kaldiio` doesn't distinguish the API for each kaldi-objects, i.e. 
 `Kaldi-Matrix`, `Kaldi-Vector`, not depending whether it is binary or text, or compressed or not, 
 can be handled by the same API.
 
-### load_ark
+
 ```python
 import kaldiio
 
