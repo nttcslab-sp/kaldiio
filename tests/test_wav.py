@@ -1,13 +1,16 @@
 import numpy as np
+import pytest
 
 from kaldiio.matio import load_ark
 from kaldiio.matio import load_scp
+from kaldiio.matio import load_scp_sequential
 from kaldiio.matio import save_ark
 from kaldiio.utils import open_like_kaldi
 from kaldiio.wavio import write_wav
 
 
-def test_load_wav(tmpdir):
+@pytest.mark.parametrize('func', [load_scp, load_scp_sequential])
+def test_load_wav(tmpdir, func):
     path = tmpdir.mkdir('test')
     wav = path.join('a.wav').strpath
     scp = path.join('wav.scp').strpath
@@ -17,11 +20,12 @@ def test_load_wav(tmpdir):
     write_wav(wav, 8000, array)
     with open(scp, 'w') as f:
         f.write('aaa {wav}\n'.format(wav=wav))
-    rate, array2 = list(load_scp(scp).values())[0]
+    rate, array2 = list(dict(func(scp)).values())[0]
     np.testing.assert_array_equal(array, array2)
 
 
-def test_read_write_wav(tmpdir):
+@pytest.mark.parametrize('func', [load_scp, load_scp_sequential])
+def test_read_write_wav(tmpdir, func):
     path = tmpdir.mkdir('test')
     ark = path.join('a.ark').strpath
     scp = path.join('a.scp').strpath
@@ -32,7 +36,7 @@ def test_read_write_wav(tmpdir):
     d = {'utt': (8000, array), 'utt2': (8000, array2)}
     save_ark(ark, d, scp=scp)
 
-    d = load_scp(scp)
+    d = dict(func(scp))
     rate, test = d['utt']
     assert rate == 8000
     np.testing.assert_array_equal(array, test)
@@ -51,7 +55,8 @@ def test_read_write_wav(tmpdir):
     np.testing.assert_array_equal(array2, test)
 
 
-def test_scpwav_stream(tmpdir):
+@pytest.mark.parametrize('func', [load_scp, load_scp_sequential])
+def test_scpwav_stream(tmpdir, func):
     path = tmpdir.mkdir('test')
     wav = path.join('aaa.wav').strpath
     wav2 = path.join('bbb.wav').strpath
@@ -67,8 +72,8 @@ def test_scpwav_stream(tmpdir):
     with open(scp, 'w') as f:
         f.write('aaa cat {wav} |\n'.format(wav=wav))
         f.write('bbb cat {wav} |\n'.format(wav=wav2))
-    rate, test = load_scp(scp)['aaa']
-    rate, test2 = load_scp(scp)['bbb']
+    rate, test = dict(func(scp))['aaa']
+    rate, test2 = dict(func(scp))['bbb']
     np.testing.assert_array_equal(array, test)
     np.testing.assert_array_equal(array2, test2)
 
@@ -94,7 +99,8 @@ def test_wavark_stream(tmpdir):
         np.testing.assert_array_equal(array2, test)
 
 
-def test_segments(tmpdir):
+@pytest.mark.parametrize('func', [load_scp, load_scp_sequential])
+def test_segments(tmpdir, func):
     # Create wav.scp
     path = tmpdir.mkdir('test')
     wavscp = path.join('wav.scp').strpath
@@ -118,7 +124,7 @@ def test_segments(tmpdir):
         f.write('utt2 wav0 0.4 0.6\n')
         f.write('utt3 wav1 0.4 0.5\n')
         f.write('utt4 wav1 0.6 0.8\n')
-    d = load_scp(wavscp, segments=segments)
+    d = dict(func(wavscp, segments=segments))
 
     np.testing.assert_array_equal(
         d['utt1'][1], array0[int(0.1 * rate):int(0.2 * rate)])
