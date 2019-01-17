@@ -43,6 +43,30 @@ def test_write_read(tmpdir, endian):
 
 
 @pytest.mark.parametrize('endian', ['<', '>'])
+def test_write_read_multiark(tmpdir, endian):
+    path = tmpdir.mkdir('test')
+
+    a = np.random.rand(1000, 120).astype(np.float32)
+    b = np.random.rand(10, 120).astype(np.float32)
+    origin = {'a': a, 'b': b}
+
+    kaldiio.save_ark(path.join('a.ark').strpath, origin,
+                     scp=path.join('b.scp').strpath, endian=endian)
+
+    c = np.random.rand(1000, 120).astype(np.float32)
+    d = np.random.rand(10, 120).astype(np.float32)
+    origin.update({'c': c, 'd': d})
+    with open(path.join('b.scp').strpath, 'a') as f:
+        kaldiio.save_ark(path.join('b.ark').strpath, origin,
+                         scp=f, endian=endian)
+
+    d5 = {k: v
+          for k, v in kaldiio.load_scp(path.join('b.scp').strpath,
+                                       endian=endian).items()}
+    _compare(d5, origin)
+
+
+@pytest.mark.parametrize('endian', ['<', '>'])
 def test_write_read_sequential(tmpdir, endian):
     path = tmpdir.mkdir('test')
 
@@ -55,6 +79,30 @@ def test_write_read_sequential(tmpdir, endian):
     d5 = {k: v
           for k, v in kaldiio.load_scp_sequential(
               path.join('b.scp').strpath, endian=endian)}
+    _compare(d5, origin)
+
+
+@pytest.mark.parametrize('endian', ['<', '>'])
+def test_write_read_multiark_sequential(tmpdir, endian):
+    path = tmpdir.mkdir('test')
+
+    a = np.random.rand(1000, 120).astype(np.float32)
+    b = np.random.rand(10, 120).astype(np.float32)
+    origin = {'a': a, 'b': b}
+
+    kaldiio.save_ark(path.join('a.ark').strpath, origin,
+                     scp=path.join('b.scp').strpath, endian=endian)
+
+    c = np.random.rand(1000, 120).astype(np.float32)
+    d = np.random.rand(10, 120).astype(np.float32)
+    origin.update({'c': c, 'd': d})
+    with open(path.join('b.scp').strpath, 'a') as f:
+        kaldiio.save_ark(path.join('b.ark').strpath, origin,
+                         scp=f, endian=endian)
+
+    d5 = {k: v
+          for k, v in kaldiio.load_scp_sequential(
+        path.join('b.scp').strpath, endian=endian)}
     _compare(d5, origin)
 
 
