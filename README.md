@@ -15,6 +15,8 @@ A pure python module for reading and writing kaldi ark files
    - Python wrapper of Kaldi: It looks nice. I recommend this if you aren't particular about pure python.
 - https://github.com/janchorowski/kaldi-python/
    - Python-C++ binding to Kaldi library: It seems not enough maintained now.
+- https://github.com/t13m/kaldi-readers-for-tensorflow
+   - Ark reader for tensorflow
 
 ## Features
 The followings are supported.
