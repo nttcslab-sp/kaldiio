@@ -4,12 +4,18 @@
 
 A pure python module for reading and writing kaldi ark files
 
-## Dependencies
 
-    numpy
-    scipy
-    six
-    Python2.7, Python3.5, Python3.6
+## Similar project
+
+- https://github.com/vesis84/kaldi-io-for-python
+ - `kaldiio`is based on this module, but supporting more features than it
+- https://github.com/funcwj/kaldi-python-io
+ - Pure python>=3.6
+- https://github.com/janchorowski/kaldi-python/
+ - Python-C++ Binding to Kaldi library
+- https://github.com/pykaldi/pykaldi
+ - Python wrapper of Kaldi: It looks nice. I recommend this if you aren't particular about pure python.
+
 
 ## Features
 The followings are supported.
@@ -34,16 +40,12 @@ The followings are **not supported**
 pip install git+https://github.com/nttcslab-sp/kaldiio
 ```
 
-## Similar project
+### Dependencies
 
-- https://github.com/vesis84/kaldi-io-for-python
- - `kaldiio`is based on this module, but supporting more features than it
-- https://github.com/funcwj/kaldi-python-io
- - Pure python>=3.6
-- https://github.com/janchorowski/kaldi-python/
- - Python-C++ Binding to Kaldi library
-- https://github.com/pykaldi/pykaldi
- - Python wrapper of Kaldi: It looks nice. I recommend this if you aren't particular about pure python.
+    numpy
+    scipy
+    six
+    Python2.7, Python3.5, Python3.6
  
 
 ## Usage
