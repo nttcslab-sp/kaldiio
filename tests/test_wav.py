@@ -18,7 +18,8 @@ def test_read_wav(tmpdir, func):
     # Write as pcm16
     array = np.random.randint(0, 10, 10, dtype=np.int16)
     write_wav(wav, 8000, array)
-    rate, array2 = func(wav)
+    with open(wav, 'rb') as f:
+        rate, array2 = func(f)
     np.testing.assert_array_equal(array, array2)
 
 
