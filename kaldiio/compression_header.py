@@ -41,8 +41,6 @@ class GlobalHeader(object):
         range = struct.unpack(endian + 'f', fd.read(4))[0]
         rows = struct.unpack(endian + 'i', fd.read(4))[0]
         cols = struct.unpack(endian + 'i', fd.read(4))[0]
-        assert rows > 0
-        assert cols > 0
         return GlobalHeader(type, min_value, range, rows, cols, endian)
 
     def write(self, fd, endian=None):

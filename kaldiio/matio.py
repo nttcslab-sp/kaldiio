@@ -16,7 +16,6 @@ from six import string_types
 
 from kaldiio.compression_header import GlobalHeader
 from kaldiio.compression_header import PerColHeader
-from kaldiio.utils import convert_to_slice
 from kaldiio.utils import LazyLoader
 from kaldiio.utils import MultiFileDescriptor
 from kaldiio.utils import open_like_kaldi
@@ -51,23 +50,75 @@ def load_scp(fname, endian='<', separator=None, as_bytes=False,
         loader = LazyLoader(load_func)
         with open_or_fd(fname, 'r') as fd:
             for line in fd:
-                try:
-                    token, arkname = line.split(separator, 1)
-                except ValueError as e:
+                seps = line.split(separator, 1)
+                if len(seps) != 2:
                     raise ValueError(
-                        str(e) + '\nFile format is wrong?')
+                        'Invalid line is found:\n>   {}'.format(line))
+                token, arkname = seps
                 loader[token] = arkname.strip()
+        return loader
     else:
         return SegmentsExtractor(fname, separator=separator,
                                  segments=segments)
-    return loader
+
+
+def load_scp_sequential(fname, endian='<', separator=None, as_bytes=False,
+                        segments=None):
+    """Lazy loader for kaldi scp file.
+
+    Args:
+        fname (str or file(text mode)):
+        endian (str):
+        separator (str):
+        as_bytes (bool): Read as raw bytes string
+        segments (str): The path of segments
+    """
+    assert endian in ('<', '>'), endian
+    if segments is None:
+        with open_or_fd(fname, 'r') as fd:
+            prev_ark = None
+            prev_arkfd = None
+
+            try:
+                for line in fd:
+                    seps = line.split(separator, 1)
+                    if len(seps) != 2:
+                        raise ValueError(
+                            'Invalid line is found:\n>   {}'.format(line))
+                    token, arkname = seps
+
+                    ark, offset, slices = _parse_arkpath(arkname)
+
+                    if prev_ark == ark:
+                        arkfd = prev_arkfd
+                        mat = _load_mat(arkfd, offset, slices, endian=endian,
+                                        as_bytes=as_bytes)
+                    else:
+                        if prev_arkfd is not None:
+                            prev_arkfd.close()
+                        arkfd = open_like_kaldi(ark, 'rb')
+                        mat = _load_mat(arkfd, offset, slices, endian=endian,
+                                        as_bytes=as_bytes)
+
+                    prev_ark = ark
+                    prev_arkfd = arkfd
+                    yield token, mat
+            except Exception:
+                if prev_arkfd is not None:
+                    prev_arkfd.close()
+                raise
+
+    else:
+        for data in SegmentsExtractor(fname, separator=separator,
+                                      segments=segments).generator():
+            yield data
 
 
 def load_wav_scp(fname,
                  segments=None,
                  separator=None):
     warnings.warn('Use load_scp instead of load_wav_scp', DeprecationWarning)
-    return load_scp(fname, separator=separator)
+    return load_scp(fname, separator=separator, segments=segments)
 
 
 class SegmentsExtractor(Mapping):
@@ -146,31 +197,76 @@ class SegmentsExtractor(Mapping):
 
 def load_mat(ark_name, endian='<', as_bytes=False):
     assert endian in ('<', '>'), endian
+    ark, offset, slices = _parse_arkpath(ark_name)
+    with open_like_kaldi(ark, 'rb') as fd:
+        return _load_mat(fd, offset, slices, endian=endian, as_bytes=as_bytes)
+
+
+def _parse_arkpath(ark_name):
+    """
+
+    Args:
+        ark_name (str):
+    Returns:
+        Tuple[str, int, Optional[Tuple[slice, ...]]]
+    Examples:
+        >>> _parse_arkpath('a.ark')
+        'a.ark', None, None
+        >>> _parse_arkpath('a.ark:12')
+        'a.ark', 12, None
+        >>> _parse_arkpath('a.ark:12[3:4]')
+        'a.ark', 12, (slice(3, 4, None),)
+        >>> _parse_arkpath('cat "fo:o.ark" |')
+        'cat "fo:o.ark" |', None, None
+    """
+    if ark_name.strip()[-1] == '|' or ark_name.strip()[0] == '|':
+        # Something like: "| cat foo" or "cat bar|" shouldn't be parsed
+        return ark_name, None, None
+
     slices = None
     if ':' in ark_name:
         fname, offset = ark_name.split(':', 1)
         if '[' in offset and ']' in offset:
             offset, Range = offset.split('[')
-            slices = convert_to_slice(Range.replace(']', '').strip())
+            # Range = [3:6,  10:30]
+            Range = Range.replace(']', '').strip()
+            slices = _convert_to_slice(Range)
         offset = int(offset)
     else:
         fname = ark_name
         offset = None
+    return fname, offset, slices
 
-    with open_like_kaldi(fname, 'rb') as fd:
-        if offset is not None:
-            fd.seek(offset)
-        if not as_bytes:
-            array = read_kaldi(fd, endian)
+
+def _convert_to_slice(string):
+    slices = []
+    for ele in string.split(','):
+        if ele == '' or ele == ':':
+            slices.append(slice(None))
         else:
-            array = fd.read()
+            args = []
+            for _ele in ele.split(':'):
+                if _ele == '':
+                    args.append(None)
+                else:
+                    args.append(int(_ele))
+            slices.append(slice(*args))
+    return tuple(slices)
+
+
+def _load_mat(fd, offset, slices=None, endian='<', as_bytes=False):
+    if offset is not None:
+        fd.seek(offset)
+    if not as_bytes:
+        array = read_kaldi(fd, endian)
+    else:
+        array = fd.read()
 
     if slices is not None:
         if isinstance(array, (tuple, list)):
             array = (array[0], array[1][slices])
         else:
             array = array[slices]
-
     return array
 
 

@@ -107,6 +107,10 @@ class _stdstream_wrap(object):
         # Never close
         pass
 
+    def close(self):
+        # Never close
+        pass
+
     def __getattr__(self, name):
         return getattr(self._stream, name)
 
@@ -161,22 +165,6 @@ def open_or_fd(fname, mode):
 
     if isinstance(fname, string_types):
         f.close()
-
-
-def convert_to_slice(string):
-    slices = []
-    for ele in string.split(','):
-        if ele == '' or ele == ':':
-            slices.append(slice(None))
-        else:
-            args = []
-            for _ele in ele.split(':'):
-                if _ele == '':
-                    args.append(None)
-                else:
-                    args.append(int(_ele))
-            slices.append(slice(*args))
-    return tuple(slices)
 
 
 class MultiFileDescriptor(object):
