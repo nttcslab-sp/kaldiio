@@ -118,7 +118,13 @@ from kaldiio import ReadHelper
 with ReadHelper('ark: gunzip -c file.ark.gz |') as reader:
     for key, array in reader:
         ...
+        
+# Ali file
+with ReadHelper('ark: gunzip -c exp/tri3_ali/ali.*.gz |') as reader:
+    for key, array in reader:
+        ...
 ```
+
 
 - Read wav.scp
 
@@ -274,7 +280,7 @@ array = kaldiio.save_mat('a.mat', array)
 
 ### open_like_kaldi
 
-``kaldiio.open_like_kaldi`` maybe a useful tool if you are familiar with Kaldi. This function can performs as following,
+``kaldiio.open_like_kaldi`` is a useful tool if you are familiar with Kaldi. This function can performs as following,
 
 ```python
 from kaldiio import open_like_kaldi
@@ -292,7 +298,8 @@ with open_like_kaldi('-', 'w') as f:
     assert f is sys.stdout
 ```
 
-For example, there are gziped alignment file, how to open it:
+For example, if there are gziped alignment file, then you can load it as:
+
 ```python
 from kaldiio import open_like_kaldi, load_ark
 with open_like_kaldi('gunzip -c exp/tri3_ali/ali.*.gz |', 'rb') as f:
