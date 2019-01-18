@@ -19,10 +19,6 @@ def read_wav(fd, return_size=False):
         dtype = 'uint8'
     elif nbytes == 2:
         dtype = 'int16'
-    elif nbytes == 4:
-        dtype = 'int32'
-    elif nbytes == 8:
-        dtype = 'int64'
     else:
         raise ValueError('bytes_per_sample must be 1, 2, 4 or 8')
     data = wd.readframes(wd.getnframes())
@@ -57,14 +53,10 @@ def read_wav_scipy(fd, return_size=False):
 
 
 def write_wav(fd, rate, array):
-    if array.dtype == np.int16:
+    if array.dtype == np.uint8:
+        sampwidth = 1
+    elif array.dtype == np.int16:
         sampwidth = 2
-    elif array.dtype == np.int32:
-        sampwidth = 4
-    elif array.dtype == np.float16:
-        sampwidth = 2
-    elif array.dtype == np.float16:
-        sampwidth = 4
     else:
         raise ValueError('Not Supported dtype {}'.format(array.dtype))
 
