@@ -9,7 +9,7 @@ A pure python module for reading and writing kaldi ark files
 This is a IO module for `Kaldi-ark` and `Kaldi-scp` file implemented in pure Python language. 
 `ark` and `scp` are file formats used in [kaldi](https://github.com/kaldi-asr/kaldi) in order to archive some objects, and they are typically used for dumping feature matrices.
 
-More detail: http://kaldi-asr.org/doc/io.html
+More detail about the File-IO in `Kaldi`: http://kaldi-asr.org/doc/io.html
 
 ### Features
 The followings are supported.
