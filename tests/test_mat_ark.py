@@ -19,12 +19,17 @@ def test_read_arks(fname):
     _compare_allclose(ark, ark0, atol=1e-1)
 
 
+@pytest.mark.parametrize('shape1,shape2', [[(1000, 120), (10, 120)],
+                                           [(0, 0), (0, 120)],
+                                           [(100,), (120,)],
+                                           ])
 @pytest.mark.parametrize('endian', ['<', '>'])
-def test_write_read(tmpdir, endian):
+@pytest.mark.parametrize('dtype', [np.float32, np.float64])
+def test_write_read(tmpdir, shape1, shape2, endian, dtype):
     path = tmpdir.mkdir('test')
 
-    a = np.random.rand(1000, 120).astype(np.float32)
-    b = np.random.rand(10, 120).astype(np.float32)
+    a = np.random.rand(*shape1).astype(dtype)
+    b = np.random.rand(*shape2).astype(dtype)
     origin = {'a': a, 'b': b}
     kaldiio.save_ark(path.join('a.ark').strpath, origin,
                      scp=path.join('b.scp').strpath, endian=endian)
@@ -43,18 +48,19 @@ def test_write_read(tmpdir, endian):
 
 
 @pytest.mark.parametrize('endian', ['<', '>'])
-def test_write_read_multiark(tmpdir, endian):
+@pytest.mark.parametrize('dtype', [np.float32, np.float64])
+def test_write_read_multiark(tmpdir, endian, dtype):
     path = tmpdir.mkdir('test')
 
-    a = np.random.rand(1000, 120).astype(np.float32)
-    b = np.random.rand(10, 120).astype(np.float32)
+    a = np.random.rand(1000, 120).astype(dtype)
+    b = np.random.rand(10, 120).astype(dtype)
     origin = {'a': a, 'b': b}
 
     kaldiio.save_ark(path.join('a.ark').strpath, origin,
                      scp=path.join('b.scp').strpath, endian=endian)
 
-    c = np.random.rand(1000, 120).astype(np.float32)
-    d = np.random.rand(10, 120).astype(np.float32)
+    c = np.random.rand(1000, 120).astype(dtype)
+    d = np.random.rand(10, 120).astype(dtype)
     origin.update({'c': c, 'd': d})
     with open(path.join('b.scp').strpath, 'a') as f:
         kaldiio.save_ark(path.join('b.ark').strpath, origin,
@@ -104,26 +110,6 @@ def test_write_read_multiark_sequential(tmpdir, endian):
           for k, v in kaldiio.load_scp_sequential(
               path.join('b.scp').strpath, endian=endian)}
     _compare(d5, origin)
-
-
-def test_write_read_zerosize_array(tmpdir):
-    path = tmpdir.mkdir('test')
-
-    a = np.array([], dtype=np.float32).reshape(0, 0)
-    b = np.random.rand(10, 120).astype(np.float32)
-    origin = {'a': a, 'b': b}
-    kaldiio.save_ark(path.join('a.ark').strpath, origin,
-                     scp=path.join('b.scp').strpath)
-
-    d2 = {k: v for k, v in kaldiio.load_ark(path.join('a.ark').strpath)}
-    d5 = {k: v
-          for k, v in kaldiio.load_scp(path.join('b.scp').strpath).items()}
-    with open(path.join('a.ark').strpath, 'rb') as fd:
-        d6 = {k: v for k, v in
-              kaldiio.load_ark(fd)}
-    _compare(d2, origin)
-    _compare(d5, origin)
-    _compare(d6, origin)
 
 
 def test_write_read_ascii(tmpdir):
@@ -248,9 +234,10 @@ def test_append_mode(tmpdir):
 
 
 @pytest.mark.parametrize('endian', ['<', '>'])
-def test_write_read_mat(tmpdir, endian):
+@pytest.mark.parametrize('dtype', [np.float32, np.float64])
+def test_write_read_mat(tmpdir, endian, dtype):
     path = tmpdir.mkdir('test')
-    valid = np.random.rand(1000, 120).astype(np.float32)
+    valid = np.random.rand(1000, 120).astype(dtype)
     kaldiio.save_mat(path.join('a.mat').strpath, valid, endian=endian)
     test = kaldiio.load_mat(path.join('a.mat').strpath, endian=endian)
     np.testing.assert_array_equal(test, valid)
