@@ -17,7 +17,7 @@ The followings are supported.
 - Read/Write for archive formats: ark, scp
   - Binary/Text - Float/Double Matrix: DM, FM
   - Binary/Text - Float/Double Vector: DV, FV
-  - Compressed Matrix for loading: CM1, CM2, CM3
+  - Compressed Matrix for loading: CM, CM2, CM3
   - Compressed Matrix for writing: All compressoin_method are supported: 1,2,3,4,5,6,7
   - Binary/Text for Int-vector, typically used for `ali` files.
 - Read/Write via a pipe: e.g. "ark: cat feats.ark |"
