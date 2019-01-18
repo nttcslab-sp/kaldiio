@@ -57,57 +57,6 @@ pip install git+https://github.com/nttcslab-sp/kaldiio
  
 
 ## Usage
-### WriteHelper
-- Write matrices in a ark with scp
-
-```python
-import numpy
-from kaldiio import WriteHelper
-with WriteHelper('ark,scp:file.ark,file.scp') as writer:
-    for i in range(10):
-        writer(str(i), numpy.random.randn(10, 10))
-        # The following is equivalent
-        # writer[str(i)] = numpy.random.randn(10, 10)
-```
-
-- Write in compressed matrix
-
-```python
-import numpy
-from kaldiio import WriteHelper
-with WriteHelper('ark:file.ark', compression_method=2) as writer:
-    for i in range(10):
-        writer(str(i), numpy.random.randn(10, 10))
-```
-
-- Write matrices in text
-
-```python
-import numpy
-from kaldiio import WriteHelper
-with WriteHelper('ark,t:file.ark') as writer:
-    for i in range(10):
-        writer(str(i), numpy.random.randn(10, 10))
-```
-
-- Write in gziped ark
-
-```python
-import numpy
-from kaldiio import WriteHelper
-with WriteHelper('ark:| gzip -c > file.ark.gz') as writer:
-    for i in range(10):
-        writer(str(i), numpy.random.randn(10, 10))
-```
-- Write matrice to stdout
-
-```python
-import numpy
-from kaldiio import WriteHelper
-with WriteHelper('ark:-') as writer:
-    for i in range(10):
-        writer(str(i), numpy.random.randn(10, 10))
-```
 ### ReadHelper
 - Read matrix-scp
 
@@ -162,6 +111,57 @@ with ReadHelper('ark:-') as reader:
         ...
 ```
 
+### WriteHelper
+- Write matrices in a ark with scp
+
+```python
+import numpy
+from kaldiio import WriteHelper
+with WriteHelper('ark,scp:file.ark,file.scp') as writer:
+    for i in range(10):
+        writer(str(i), numpy.random.randn(10, 10))
+        # The following is equivalent
+        # writer[str(i)] = numpy.random.randn(10, 10)
+```
+
+- Write in compressed matrix
+
+```python
+import numpy
+from kaldiio import WriteHelper
+with WriteHelper('ark:file.ark', compression_method=2) as writer:
+    for i in range(10):
+        writer(str(i), numpy.random.randn(10, 10))
+```
+
+- Write matrices in text
+
+```python
+import numpy
+from kaldiio import WriteHelper
+with WriteHelper('ark,t:file.ark') as writer:
+    for i in range(10):
+        writer(str(i), numpy.random.randn(10, 10))
+```
+
+- Write in gziped ark
+
+```python
+import numpy
+from kaldiio import WriteHelper
+with WriteHelper('ark:| gzip -c > file.ark.gz') as writer:
+    for i in range(10):
+        writer(str(i), numpy.random.randn(10, 10))
+```
+- Write matrice to stdout
+
+```python
+import numpy
+from kaldiio import WriteHelper
+with WriteHelper('ark:-') as writer:
+    for i in range(10):
+        writer(str(i), numpy.random.randn(10, 10))
+```
 
 ## More low level API
 `WriteHelper` and `ReadHelper` are high level wrapper of the following API to support kaldi style arguments.
