@@ -58,6 +58,9 @@ pip install git+https://github.com/nttcslab-sp/kaldiio
 
 ## Usage
 ### ReadHelper
+`ReadHelper` supports sequential accessing for `scp` or `ark`. If you need to access randomly, then use `kaldiio.load_scp`.
+
+
 - Read matrix-scp
 
 ```python
@@ -66,6 +69,7 @@ with ReadHelper('scp:file.scp') as reader:
     for key, array in reader:
         ...
 ```
+
 
 - Read gziped ark
 
