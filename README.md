@@ -5,9 +5,9 @@
 A pure python module for reading and writing kaldi ark files
 
 ## Introduction
-### What are `ark` and `scp`?
-
-`ark` and `scp` are file formats used in [kaldi](https://github.com/kaldi-asr/kaldi) in order to archive some objects, typically used for dumping feature matrices.
+### What is this? What are `ark` and `scp`?
+This is a IO module for `Kaldi-ark` and `Kaldi-scp` file implemented in pure Python language. 
+`ark` and `scp` are file formats used in [kaldi](https://github.com/kaldi-asr/kaldi) in order to archive some objects, and they are typically used for dumping feature matrices.
 
 More detail: http://kaldi-asr.org/doc/io.html
 
