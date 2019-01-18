@@ -220,7 +220,7 @@ for key in d:
 
 `load_scp_sequential` creates "generator" as same as `load_ark`.
 If you don't need random-accessing for each elements 
-and use just to iterate for whole data, 
+and use it just to iterate for whole data, 
 then this method possibly performs faster than `load_scp`.
 
 ```python
@@ -253,7 +253,7 @@ array = kaldiio.load_mat('a.ark:1134')  # Seek and load
 # If the file is wav, gets Tuple[int, array]
 rate, array = kaldiio.load_mat('a.wav') 
 ```
-- `load_mat` can load both kaldi-matrix, kaldi-vector, and wave
+- `load_mat` can load kaldi-matrix, kaldi-vector, and wave
 
 ### save_ark
 ```python
