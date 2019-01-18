@@ -4,21 +4,14 @@
 
 A pure python module for reading and writing kaldi ark files
 
+## Introduction
+### What are `ark` and `scp`?
 
-## Similar project
+`ark` and `scp` are file formats used in [kaldi](https://github.com/kaldi-asr/kaldi) in order to archive some objects, typically used for dumping feature matrices.
 
-- https://github.com/vesis84/kaldi-io-for-python
-   - `kaldiio` is based on this module, but `kaldiio` supports more features than it
-- https://github.com/funcwj/kaldi-python-io
-   - Pure python>=3.6. `nnet3-egs`is also supported.
-- https://github.com/pykaldi/pykaldi
-   - Python wrapper of Kaldi: It looks nice. I recommend this if you aren't particular about pure python.
-- https://github.com/janchorowski/kaldi-python/
-   - Python-C++ binding to Kaldi library: It seems not enough maintained now.
-- https://github.com/t13m/kaldi-readers-for-tensorflow
-   - Ark reader for tensorflow
+More detail: http://kaldi-asr.org/doc/io.html
 
-## Features
+### Features
 The followings are supported.
 
 - Read/Write for archive formats: ark, scp
@@ -35,6 +28,19 @@ The followings are **not supported**
 - Write in existing scp file
 - NNet2/NNet3 egs
 - Lattice file
+
+### Similar project
+
+- https://github.com/vesis84/kaldi-io-for-python
+   - `kaldiio` is based on this module, but `kaldiio` supports more features than it
+- https://github.com/funcwj/kaldi-python-io
+   - Pure python>=3.6. `nnet3-egs`is also supported.
+- https://github.com/pykaldi/pykaldi
+   - Python wrapper of Kaldi: It looks nice. I recommend this if you aren't particular about pure python.
+- https://github.com/janchorowski/kaldi-python/
+   - Python-C++ binding to Kaldi library: It seems not enough maintained now.
+- https://github.com/t13m/kaldi-readers-for-tensorflow
+   - Ark reader for tensorflow
 
 ## Install 
 
