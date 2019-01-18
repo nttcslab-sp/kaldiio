@@ -168,11 +168,11 @@ with WriteHelper('ark:-') as writer:
 ```
 
 ## More low level API
-`WriteHelper` and `ReadHelper` are high level wrapper of the following API to support kaldi style arguments.
+Indeed, `WriteHelper` and `ReadHelper` are high level wrapper of the following API to support kaldi style arguments.
 
 ### load_ark
 Basically, `kaldiio` doesn't distinguish the API for each kaldi-objects, i.e. 
-`Kaldi-Matrix`, `Kaldi-Vector`, not depending whether it is binary or text, or compressed or not, 
+`Kaldi-Matrix`, `Kaldi-Vector`, not depending on whether it is binary or text, or compressed or not, 
 can be handled by the same API.
 
 
