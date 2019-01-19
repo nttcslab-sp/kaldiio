@@ -21,7 +21,7 @@ The followings are supported.
   - Compressed Matrix for writing: All compressoin_method are supported: 1,2,3,4,5,6,7
   - Binary/Text for Int-vector, typically used for `ali` files.
 - Read/Write via a pipe: e.g. "ark: cat feats.ark |"
-- Read/Write wav.scp / wav.ark
+- Read wav.scp / wav.ark
 
 The followings are **not supported**
 
