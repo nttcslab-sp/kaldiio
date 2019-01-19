@@ -57,6 +57,10 @@ pip install git+https://github.com/nttcslab-sp/kaldiio
  
 
 ## Usage
+`kaldiio` doesn't distinguish the API for each kaldi-objects, i.e. 
+`Kaldi-Matrix`, `Kaldi-Vector`, not depending on whether it is binary or text, or compressed or not, 
+can be handled by the same API.
+
 ### ReadHelper
 `ReadHelper` supports sequential accessing for `scp` or `ark`. If you need to access randomly, then use `kaldiio.load_scp`.
 
@@ -171,10 +175,6 @@ with WriteHelper('ark:-') as writer:
 Indeed, `WriteHelper` and `ReadHelper` are high level wrapper of the following API to support kaldi style arguments.
 
 ### load_ark
-Basically, `kaldiio` doesn't distinguish the API for each kaldi-objects, i.e. 
-`Kaldi-Matrix`, `Kaldi-Vector`, not depending on whether it is binary or text, or compressed or not, 
-can be handled by the same API.
-
 
 ```python
 import kaldiio
