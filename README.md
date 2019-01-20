@@ -31,16 +31,18 @@ The followings are **not supported**
 
 ### Similar project
 
-- https://github.com/vesis84/kaldi-io-for-python
-   - `kaldiio` is based on this module, but `kaldiio` supports more features than it
-- https://github.com/funcwj/kaldi-python-io
-   - Pure python>=3.6. `nnet3-egs`is also supported.
-- https://github.com/pykaldi/pykaldi
-   - Python wrapper of Kaldi: It looks nice. I recommend this if you aren't particular about pure python.
-- https://github.com/janchorowski/kaldi-python/
-   - Python-C++ binding to Kaldi library: It seems not enough maintained now.
-- https://github.com/t13m/kaldi-readers-for-tensorflow
-   - Ark reader for tensorflow
+- Pure Python
+   - https://github.com/vesis84/kaldi-io-for-python
+      - `kaldiio` is based on this module, but `kaldiio` supports more features than it.
+   - https://github.com/funcwj/kaldi-python-io
+      - Python>=3.6. `nnet3-egs`is also supported.
+- Python-C++ binding 
+   - https://github.com/pykaldi/pykaldi
+      - Python wrapper of Kaldi. Supports many kaldi classes. I recommend this if you aren't particular about pure python.
+   - https://github.com/janchorowski/kaldi-python/
+      - It seems not enough maintained now.
+   - https://github.com/t13m/kaldi-readers-for-tensorflow
+      - Ark reader for tensorflow
 
 ## Install 
 
@@ -172,7 +174,7 @@ with WriteHelper('ark:-') as writer:
 ```
 
 ## More low level API
-Indeed, `WriteHelper` and `ReadHelper` are high level wrapper of the following API to support kaldi style arguments.
+`WriteHelper` and `ReadHelper` are high level wrapper of the following API to support kaldi style arguments.
 
 ### load_ark
 
