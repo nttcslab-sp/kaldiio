@@ -6,7 +6,7 @@ from setuptools import setup
 setup(name='kaldiio',
       version='2.13.1',
       description='Kaldi-ark loading and writing module',
-      author='nttcslab',
+      author='nttcslab-sp',
       # author_email='',
       url='https://github.com/nttcslab-sp/kaldiio',
       long_description=io.open(os.path.join(os.path.dirname(__file__),
