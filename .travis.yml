@@ -19,6 +19,6 @@ deploy:
   password:
     secure: R9tGf47x0crqXYSZq6SMFyEPa0ll6VjWIlW/lFxlYRIrSkYaTuD7F7uBNAVL9+H7HC8iQZT0OYPjG+AVuX1ZN5RWPiMRph2/3s2UdqGvagmevVSJd5CAQkDr/2U9An1kzx3dqiIELYIvqYryhWcVjb7fRFmBoBnp6jZVnNobvb3gXvIHdtkjF9ltq1xRLw3y4iEMqaYLgwJTgtarC+6vWsCtL8FS+3T2Rz9GFnXEbM5bBVNvVxTBBxMCFXUV39BoY7yr/w9oJg4YjX/rKaZVyYPbo1BCRCTot8r+Drv89Dk2rdNzQ55FC01/gMl4PwbA4gvYBpNI8d/fk25EZDxW6DoUAwM9si8gj418Po0dJ5Vni9uI1tJxQiKN0v9SBzEAiJMp7yi8rtmSkUe5zZDhUlBaMPHMIVpsuRbf/SiYu0MEkeWxHRmJ8eEf8Vl8YrHdpPG02kiFzzfM8fHZGlq679QnvOSUf216exNi/NpLTpDMx9HKWt4oa7V2TkkM3yQrddI9rumLVstpZ+Y7eT3rTpFutb1lEQDd627gwreSnGBJCDWsAb2pFM1fFD/y9FftmhJV1dc1u0WOl6IfxLfT0LhHc/42PO0Yq9o2YYNxRugtN3dyrc97ikNena+q7nc+MSQsrat8jidUB55srqN8ebasdLACq4MeRXqfkgQ1DpQ=
   on:
-    branch: release
+    tags: true
     distributions: sdist --formats=gztar,zip
     python: 3.6
