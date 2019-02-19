@@ -4,7 +4,7 @@ import os.path
 from setuptools import setup
 
 setup(name='kaldiio',
-      version='2.13.1',
+      version='2.13.2',
       description='Kaldi-ark loading and writing module',
       author='nttcslab-sp',
       # author_email='',
