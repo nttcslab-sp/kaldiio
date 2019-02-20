@@ -52,14 +52,6 @@ The followings are **not supported**
 pip install kaldiio
 ```
 
-### Dependencies
-
-    numpy
-    scipy
-    six
-    Python2.7, Python3.5, Python3.6
- 
-
 ## Usage
 `kaldiio` doesn't distinguish the API for each kaldi-objects, i.e. 
 `Kaldi-Matrix`, `Kaldi-Vector`, not depending on whether it is binary or text, or compressed or not, 
