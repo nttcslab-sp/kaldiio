@@ -1,4 +1,5 @@
 # Kaldiio
+[![pypi](https://img.shields.io/pypi/v/kaldiio.svg)](https://pypi.python.org/pypi/kaldiio)
 [![Build Status](https://travis-ci.com/nttcslab-sp/kaldiio.svg?branch=master)](https://travis-ci.com/nttcslab-sp/kaldiio)
 [![codecov](https://codecov.io/gh/nttcslab-sp/kaldiio/branch/master/graph/badge.svg)](https://codecov.io/gh/nttcslab-sp/kaldiio)
 
@@ -47,7 +48,7 @@ The followings are **not supported**
 ## Install 
 
 ```bash
-pip install git+https://github.com/nttcslab-sp/kaldiio
+pip install kaldiio
 ```
 
 ### Dependencies
