@@ -16,7 +16,7 @@ setup(name='kaldiio',
       packages=['kaldiio'],
       install_requires=['six', 'scipy'],
       setup_requires=['pytest-runner', 'numpy'],
-      tests_require=['pytest', 'pytest-cov']
+      tests_require=['pytest', 'pytest-cov'],
       classifiers=[
             'Development Status :: 5 - Production/Stable',
             'Intended Audience :: Science/Research',
