@@ -4,7 +4,7 @@ import os.path
 from setuptools import setup
 
 setup(name='kaldiio',
-      version='2.13.2',
+      version='2.13.3',
       description='Kaldi-ark loading and writing module',
       author='nttcslab-sp',
       # author_email='',
@@ -17,4 +17,11 @@ setup(name='kaldiio',
       install_requires=['six', 'scipy'],
       setup_requires=['pytest-runner', 'numpy'],
       tests_require=['pytest', 'pytest-cov']
+      classifiers=[
+            'Development Status :: 5 - Production/Stable',
+            'Intended Audience :: Science/Research',
+            'Programming Language :: Python :: 2.7',
+            'Programming Language :: Python :: 3.5',
+            'Programming Language :: Python :: 3.6',
+            'Topic :: Multimedia :: Sound/Audio :: Analysis']
       )
