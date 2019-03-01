@@ -8,7 +8,6 @@ import re
 import struct
 import sys
 import warnings
-import wave
 
 import numpy as np
 from six import binary_type
