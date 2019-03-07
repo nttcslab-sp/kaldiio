@@ -6,6 +6,16 @@
 
 A pure python module for reading and writing kaldi ark files
 
+- [Introduction](#introduction)
+    - [What is this? What are `ark` and `scp`?](#what-is-this-what-are-ark-and-scp)
+    - [Features](#features)
+    - [Similar projects](#similar-projects)
+- [Install](#install)
+- [Usage](#usage)
+    - [ReadHelper](#readhelper)
+    - [WriteHelper](#writehelper)
+- [More low level API](#more-low-level-api)
+
 ## Introduction
 ### What is this? What are `ark` and `scp`?
 This is an IO module for `Kaldi-ark` and `Kaldi-scp` implemented in pure Python language. 
@@ -13,7 +23,7 @@ This is an IO module for `Kaldi-ark` and `Kaldi-scp` implemented in pure Python 
 
 More detail about the File-IO in `Kaldi`: http://kaldi-asr.org/doc/io.html
 
-### Ark file and copy-feats
+#### Ark file and copy-feats
 `ark` is a archive format to save any Kaldi objects. This library mainly support KaldiMatrix/KaldiVector.
 This ia an example of ark of KaldiMatrix: [ark file](tests/arks/test.ark)
 
@@ -25,7 +35,7 @@ copy-feats ark:test.ark ark,t:text.ark
 ```
 
 
-`copy-feats` is designed to have high affinity to unix command line:
+`copy-feats` is designed to have high affinity with unix command line:
 
 1. `ark` can be flushed to and from unix pipe.
 
@@ -80,7 +90,6 @@ uttid1 sph2pipe -f wav /some/path/a.wv1 |
 uttid2 sph2pipe -f wav /some/path/b.wv1 |
 uttid3 sph2pipe -f wav /some/path/c.wv1 |
 ``` 
-
 
 ### Features
 Kaldiio supports:
