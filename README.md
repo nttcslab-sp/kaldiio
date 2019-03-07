@@ -13,6 +13,56 @@ This is an IO module for `Kaldi-ark` and `Kaldi-scp` implemented in pure Python 
 
 More detail about the File-IO in `Kaldi`: http://kaldi-asr.org/doc/io.html
 
+### Ark file and copy-feats
+`ark` is a archive format to save any Kaldi objects. This library mainly support KaldiMatrix/KaldiVector.
+This ia an example of ark of KaldiMatrix: [ark file](tests/arks/test.ark)
+
+If you have kaldi, you can convert it to text format as following
+
+```bash
+# copy-feats <read-specifier> <write-specifier>
+copy-feats ark:test.ark ark,t:text.ark
+```
+
+
+`copy-feats` is designed to have high affinity to unix command line:
+
+1. `ark` can be flushed to and from unix pipe.
+
+        cat test.ark | copy-feats ark:- ark,t:- | less # Show the content of the ark
+    `-` indicates standard input stream or output stream. 
+1. Unix command can be used as `read-specifier` and `wspecifier`
+        copy-feats ark:'gunzip -c some.ark.gz |' ark:some.ark
+
+`kaldiio` supports these feature entirely.
+
+
+#### Scp file
+`scp` is a text file such as,
+
+```
+uttid1 /some/where/feats.ark:123
+uttid2 /some/where/feats.ark:156
+uttid3 /some/where/feats.ark:245
+```
+The first column indicates the utterance id and the second is matrix/vector. 
+The number after colon is a starting address the object of the file.
+
+`scp` looks very simple format, but has several powerful features.
+
+1. It can be convert to `ark` file and can be generated from `ark`
+
+        copy-feats scp:foo.scp ark:foo.ark  # scp -> ark
+        copy-feats ark:foo.ark ark,scp:bar.ark,bar.scp  # ark -> ark,scp
+
+1. Unix command can be empeded 
+
+    For example, the following file is equivalent to the first scp.
+    
+        uttid1 cat /some/where/feats.ark:123 |
+        uttid2 cat /some/where/feats.ark:156 |
+        uttid3 cat /some/where/feats.ark:245 |
+
 ### Features
 The followings are supported.
 
@@ -31,7 +81,7 @@ The followings are **not supported**
 - NNet2/NNet3 egs
 - Lattice file
 
-### Similar project
+### Similar projects
 
 - Pure Python
    - https://github.com/vesis84/kaldi-io-for-python
@@ -203,6 +253,7 @@ import kaldiio
 d = kaldiio.load_scp('a.scp')
 for key in d:
     array = d[key]
+
     
 with open('a.scp') as fd:
     kaldiio.load_scp(fd)
@@ -210,6 +261,18 @@ with open('a.scp') as fd:
 d = kaldiio.load_scp('data/train/wav.scp', segments='data/train/segments')
 for key in d:
     rate, array = d[key]
+```
+
+The object created by `load_scp` is a dict-like object, thus it has methods of `dict`.
+
+```python
+import kaldiio
+d = kaldiio.load_scp('a.scp')
+d.keys()
+d.items()
+d.values()
+'uttid' in d
+d.get('uttid')
 ```
 
 ### load_scp_sequential (from v2.13.0)
@@ -239,6 +302,22 @@ for key in d:
 ```
 
 - v2.11.0: `load_wav_scp` is deprecated now. Use `load_scp`.
+#### What is `wav.scp`?
+`wav.scp` is a `scp` to describe wav paths.
+
+```
+uttid1 /some/path/a.wav
+uttid2 /some/path/b.wav
+uttid3 /some/path/c.wav
+``` 
+
+`wav.scp` is also can be embeded unix command as normal scp file. This is often used for converting file format in kaldi recipes.
+
+```
+uttid1 sph2pipe -f wav /some/path/a.wv1 | 
+uttid2 sph2pipe -f wav /some/path/b.wv1 |
+uttid3 sph2pipe -f wav /some/path/c.wv1 |
+``` 
 
 
 ### load_mat
