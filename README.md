@@ -64,8 +64,26 @@ The number after colon is a starting address the object of the file.
         uttid2 cat /some/where/feats.ark:156 |
         uttid3 cat /some/where/feats.ark:245 |
 
+#### wav.scp
+`wav.scp` is a `scp` to describe wave paths.
+
+```
+uttid1 /some/path/a.wav
+uttid2 /some/path/b.wav
+uttid3 /some/path/c.wav
+``` 
+
+`wav.scp` is also can be embeded unix command as normal scp file. This is often used for converting file format in kaldi recipes.
+
+```
+uttid1 sph2pipe -f wav /some/path/a.wv1 | 
+uttid2 sph2pipe -f wav /some/path/b.wv1 |
+uttid3 sph2pipe -f wav /some/path/c.wv1 |
+``` 
+
+
 ### Features
-The followings are supported.
+Kaldiio supports:
 
 - Read/Write for archive formats: ark, scp
   - Binary/Text - Float/Double Matrix: DM, FM
@@ -303,23 +321,6 @@ for key in d:
 ```
 
 - v2.11.0: `load_wav_scp` is deprecated now. Use `load_scp`.
-#### What is `wav.scp`?
-`wav.scp` is a `scp` to describe wav paths.
-
-```
-uttid1 /some/path/a.wav
-uttid2 /some/path/b.wav
-uttid3 /some/path/c.wav
-``` 
-
-`wav.scp` is also can be embeded unix command as normal scp file. This is often used for converting file format in kaldi recipes.
-
-```
-uttid1 sph2pipe -f wav /some/path/a.wv1 | 
-uttid2 sph2pipe -f wav /some/path/b.wv1 |
-uttid3 sph2pipe -f wav /some/path/c.wv1 |
-``` 
-
 
 ### load_mat
 ```python
