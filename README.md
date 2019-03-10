@@ -56,8 +56,8 @@ uttid1 /some/where/feats.ark:123
 uttid2 /some/where/feats.ark:156
 uttid3 /some/where/feats.ark:245
 ```
-The first column indicates the utterance id and the second is matrix/vector. 
-The number after colon is a starting address the object of the file.
+The first column indicates the utterance id and the second is the file path of matrix/vector of kaldi formats. 
+The number after colon points a starting address the object of the file.
 
 `scp` looks very simple format, but has several powerful features.
 
@@ -66,7 +66,7 @@ The number after colon is a starting address the object of the file.
         copy-feats scp:foo.scp ark:foo.ark  # scp -> ark
         copy-feats ark:foo.ark ark,scp:bar.ark,bar.scp  # ark -> ark,scp
 
-1. Unix command can be empeded 
+1. Unix command can be empeded.
 
     For example, the following file is equivalent to the first scp.
     
@@ -75,7 +75,7 @@ The number after colon is a starting address the object of the file.
         uttid3 cat /some/where/feats.ark:245 |
 
 #### wav.scp
-`wav.scp` is a `scp` to describe wave paths.
+`wav.scp` is a `scp` to describe wave file paths.
 
 ```
 uttid1 /some/path/a.wav
@@ -372,7 +372,7 @@ with open_like_kaldi('| gzip a.ark.gz', 'w') as f:
 # array.ndim must be 1 or 2
 array = kaldiio.save_mat('a.mat', array)
 ```
-- `load_mat` can save both kaldi-matrix and kaldi-vector
+- `save_mat` can save both kaldi-matrix and kaldi-vector
 
 
 ### open_like_kaldi
