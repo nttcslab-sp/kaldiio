@@ -144,7 +144,7 @@ can be handled by the same API.
 ```python
 from kaldiio import ReadHelper
 with ReadHelper('scp:file.scp') as reader:
-    for key, array in reader:
+    for key, numpy_array in reader:
         ...
 ```
 
@@ -154,12 +154,12 @@ with ReadHelper('scp:file.scp') as reader:
 ```python
 from kaldiio import ReadHelper
 with ReadHelper('ark: gunzip -c file.ark.gz |') as reader:
-    for key, array in reader:
+    for key, numpy_array in reader:
         ...
         
 # Ali file
 with ReadHelper('ark: gunzip -c exp/tri3_ali/ali.*.gz |') as reader:
-    for key, array in reader:
+    for key, numpy_array in reader:
         ...
 ```
 
@@ -169,7 +169,7 @@ with ReadHelper('ark: gunzip -c exp/tri3_ali/ali.*.gz |') as reader:
 ```python
 from kaldiio import ReadHelper
 with ReadHelper('scp:wav.scp') as reader:
-    for key, (rate, array) in reader:
+    for key, (rate, numpy_array) in reader:
         ...
 ```
 
@@ -180,7 +180,7 @@ with ReadHelper('scp:wav.scp') as reader:
 ```python
 from kaldiio import ReadHelper
 with ReadHelper('scp:wav.scp', segments='segments') as reader
-    for key, (rate, array) in reader:
+    for key, (rate, numpy_array) in reader:
         ...
 ```
 
@@ -189,7 +189,7 @@ with ReadHelper('scp:wav.scp', segments='segments') as reader
 ```python
 from kaldiio import ReadHelper
 with ReadHelper('ark:-') as reader:
-    for key, array in reader:
+    for key, numpy_array in reader:
         ...
 ```
 
@@ -254,18 +254,18 @@ with WriteHelper('ark:-') as writer:
 import kaldiio
 
 d = kaldiio.load_ark('a.ark')  # d is a generator object
-for key, array in d:
+for key, numpy_array in d:
     ...
     
 # === load_ark can accepts file descriptor, too
 with open('a.ark') as fd:
-    for key, array in kaldiio.load_ark(fd):
+    for key, numpy_array in kaldiio.load_ark(fd):
         ...
 
 # === Use with open_like_kaldi
 from kaldiio import open_like_kaldi
 with open_like_kaldi('gunzip -c file.ark.gz |', 'r') as f:
-    for key, array in kaldiio.load_ark(fd):
+    for key, numpy_array in kaldiio.load_ark(fd):
         ...
 ```
 
@@ -280,7 +280,7 @@ import kaldiio
 
 d = kaldiio.load_scp('a.scp')
 for key in d:
-    array = d[key]
+    numpy_array = d[key]
 
     
 with open('a.scp') as fd:
@@ -288,7 +288,7 @@ with open('a.scp') as fd:
     
 d = kaldiio.load_scp('data/train/wav.scp', segments='data/train/segments')
 for key in d:
-    rate, array = d[key]
+    rate, numpy_array = d[key]
 ```
 
 The object created by `load_scp` is a dict-like object, thus it has methods of `dict`.
@@ -313,7 +313,7 @@ then this method possibly performs faster than `load_scp`.
 ```python
 import kaldiio
 d = kaldiio.load_scp_sequential('a.scp')
-for key, array in d:
+for key, numpy_array in d:
     ...
 ```
 
@@ -321,23 +321,23 @@ for key, array in d:
 ```python
 d = kaldiio.load_scp('wav.scp')
 for key in d:
-    rate, array = d[key]
+    rate, numpy_array = d[key]
     
 # Supporting "segments"
 d = kaldiio.load_scp('data/train/wav.scp', segments='data/train/segments')
 for key in d:
-    rate, array = d[key]
+    rate, numpy_array = d[key]
 ```
 
 - v2.11.0: `load_wav_scp` is deprecated now. Use `load_scp`.
 
 ### load_mat
 ```python
-array = kaldiio.load_mat('a.mat')
-array = kaldiio.load_mat('a.ark:1134')  # Seek and load
+numpy_array = kaldiio.load_mat('a.mat')
+numpy_array = kaldiio.load_mat('a.ark:1134')  # Seek and load
 
-# If the file is wav, gets Tuple[int, array]
-rate, array = kaldiio.load_mat('a.wav') 
+# If the file is wav, gets Tuple[int, numpy.ndarray]
+rate, numpy_array = kaldiio.load_mat('a.wav') 
 ```
 - `load_mat` can load kaldi-matrix, kaldi-vector, and wave
 
@@ -345,32 +345,32 @@ rate, array = kaldiio.load_mat('a.wav')
 ```python
 
 # === Create ark file from numpy
-kaldiio.save_ark('b.ark', {'key': array, 'key2': array2})
+kaldiio.save_ark('b.ark', {'key': numpy_array, 'key2': numpy_array2})
 # Create ark with scp _file, too
-kaldiio.save_ark('b.ark', {'key': array, 'key2': array2},
+kaldiio.save_ark('b.ark', {'key': numpy_array, 'key2': numpy_array2},
                  scp='b.scp')
 
 # === Writes arrays to sys.stdout
 import sys
-kaldiio.save_ark(sys.stdout, {'key': array})
+kaldiio.save_ark(sys.stdout, {'key': numpy_array})
 
 # === Writes arrays for each keys
 # generate a.ark
-kaldiio.save_ark('a.ark', {'key': array, 'key2': array2})
+kaldiio.save_ark('a.ark', {'key': numpy_array, 'key2': numpy_array2})
 # After here, a.ark is opened with 'a' (append) mode.
-kaldiio.save_ark('a.ark', {'key3': array3}, append=True)
+kaldiio.save_ark('a.ark', {'key3': numpy_array3}, append=True)
 
 
 # === Use with open_like_kaldi
 from kaldiio import open_like_kaldi
 with open_like_kaldi('| gzip a.ark.gz', 'w') as f:
-    kaldiio.save_ark(f, {'key': array})
-    kaldiio.save_ark(f, {'key2': array2})
+    kaldiio.save_ark(f, {'key': numpy_array})
+    kaldiio.save_ark(f, {'key2': numpy_array2})
 ```
 ### save_mat
 ```python
 # array.ndim must be 1 or 2
-array = kaldiio.save_mat('a.mat', array)
+kaldiio.save_mat('a.mat', numpy_array)
 ```
 - `save_mat` can save both kaldi-matrix and kaldi-vector
 
@@ -402,7 +402,7 @@ from kaldiio import open_like_kaldi, load_ark
 with open_like_kaldi('gunzip -c exp/tri3_ali/ali.*.gz |', 'rb') as f:
     # Alignment format equals ark of IntVector
     g = load_ark(f)
-    for k, array in g:
+    for k, numpy_array in g:
         ...
 ```
 
@@ -415,6 +415,6 @@ spec_dict = parse_specifier(rspecifier)
 # spec_dict = {'ark': 'gunzip -c file.ark.gz |'}
 
 with open_like_kaldi(spec_dict['ark'], 'rb') as fark:
-    for key, array in load_ark(fark):
+    for key, numpy_array in load_ark(fark):
         ...
 ```
