@@ -8,6 +8,7 @@ import re
 import struct
 import sys
 import warnings
+import wave
 
 import numpy as np
 from six import binary_type
@@ -93,14 +94,14 @@ def load_scp_sequential(fname, endian='<', separator=None, as_bytes=False,
                         arkfd = prev_arkfd
                         mat = _load_mat(arkfd, offset, slices, endian=endian,
                                         as_bytes=as_bytes,
-                                        use_scipy_wav=offset is None)
+                                        use_scipy_wav=False)
                     else:
                         if prev_arkfd is not None:
                             prev_arkfd.close()
                         arkfd = open_like_kaldi(ark, 'rb')
                         mat = _load_mat(arkfd, offset, slices, endian=endian,
                                         as_bytes=as_bytes,
-                                        use_scipy_wav=offset is None)
+                                        use_scipy_wav=False)
 
                     prev_ark = ark
                     prev_arkfd = arkfd
@@ -333,7 +334,10 @@ def read_kaldi(fd, endian='<', return_size=False, use_scipy_wav=False):
         if use_scipy_wav:
             array, size = read_wav_scipy(fd, return_size=True)
         else:
-            array, size = read_wav(fd, return_size=True)
+            try:
+                array, size = read_wav(fd, return_size=True)
+            except wave.Error:
+                array, size = read_wav_scipy(fd, return_size=True)
 
     # Load as binary
     elif binary_flag[:2] == b'\0B':
