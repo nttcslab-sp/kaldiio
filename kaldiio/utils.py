@@ -147,14 +147,14 @@ def open_like_kaldi(name, mode='r'):
         else:
             return _stdstream_wrap(sys.stdout)
     else:
-        return open(name, mode)
+        return io.open(name, mode)
 
 
 @contextmanager
 def open_or_fd(fname, mode):
     # If fname is a file name
     if isinstance(fname, string_types):
-        f = open(fname, mode)
+        f = io.open(fname, mode)
     # If fname is a file descriptor
     else:
         if PY3 and 'b' in mode and isinstance(fname, TextIOBase):

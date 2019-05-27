@@ -55,7 +55,7 @@ def load_scp(fname, endian='<', separator=None, as_bytes=False,
                     raise ValueError(
                         'Invalid line is found:\n>   {}'.format(line))
                 token, arkname = seps
-                loader[token] = arkname.strip()
+                loader[token] = arkname.rstrip()
         return loader
     else:
         return SegmentsExtractor(fname, separator=separator,
@@ -86,7 +86,7 @@ def load_scp_sequential(fname, endian='<', separator=None, as_bytes=False,
                         raise ValueError(
                             'Invalid line is found:\n>   {}'.format(line))
                     token, arkname = seps
-                    arkname = arkname.strip()
+                    arkname = arkname.rstrip()
 
                     ark, offset, slices = _parse_arkpath(arkname)
 
@@ -140,9 +140,9 @@ class SegmentsExtractor(Mapping):
 
         self.segments = segments
         self._segments_dict = {}
-        with open(self.segments) as f:
+        with open_or_fd(self.segments, 'r') as f:
             for l in f:
-                sps = l.strip().split(separator)
+                sps = l.rstrip().split(separator)
                 if len(sps) != 4:
                     raise RuntimeError('Format is invalid: {}'.format(l))
                 uttid, recodeid, st, et = sps
@@ -223,7 +223,7 @@ def _parse_arkpath(ark_name):
         >>> _parse_arkpath('cat "fo:o.ark" |')
         'cat "fo:o.ark" |', None, None
     """
-    if ark_name.strip()[-1] == '|' or ark_name.strip()[0] == '|':
+    if ark_name.rstrip()[-1] == '|' or ark_name.rstrip()[0] == '|':
         # Something like: "| cat foo" or "cat bar|" shouldn't be parsed
         return ark_name, None, None
 
@@ -611,7 +611,7 @@ def save_ark(ark, array_dict, scp=None, append=False, text=False,
         name = ark if isinstance(ark, string_types) else ark.name
         with open_or_fd(scp, mode) as fd:
             for key, position in zip(array_dict, pos_list):
-                fd.write(key + ' ' + name + ':' +
+                fd.write(key + u' ' + name + ':' +
                          str(position + offset) + os.linesep)
 
 
