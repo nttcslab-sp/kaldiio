@@ -217,9 +217,9 @@ def test_append_mode(tmpdir):
     kaldiio.save_ark(path.join('a.ark').strpath, origin,
                      scp=path.join('b.scp').strpath)
 
-    kaldiio.save_ark(path.join('a2.ark').strpath, {'a': a},
+    kaldiio.save_ark(path.join('a2.ark').strpath, {'Ï,é,à': a},
                      scp=path.join('b2.scp').strpath, append=True)
-    kaldiio.save_ark(path.join('a2.ark').strpath, {'b': b},
+    kaldiio.save_ark(path.join('a2.ark').strpath, {'あいうえお': b},
                      scp=path.join('b2.scp').strpath, append=True)
     d1 = {k: v for k, v in kaldiio.load_ark(path.join('a.ark').strpath)}
     d2 = {k: v

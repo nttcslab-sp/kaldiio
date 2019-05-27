@@ -299,16 +299,16 @@ def read_token(fd):
         fd (file):
     """
     token = []
+    # Keep the loop until finding ' ' or end of char
     while True:
         b = fd.read(1)
-        if isinstance(b, binary_type):
-            try:
-                c = b.decode()
-            except UnicodeDecodeError:
-                pass
-            else:
-                if c == ' ' or c == '':
-                    break
+        try:
+            c = b.decode()
+        except UnicodeDecodeError:
+            pass
+        else:
+            if c == ' ' or c == '':
+                break
         token.append(b)
     if len(token) == 0:  # End of file
         return None
@@ -480,11 +480,11 @@ def read_ascii_mat(fd, return_size=False):
 
     # Find '[' char
     while True:
+        b = fd.read(1)
         try:
-            char = fd.read(1).decode()
+            char = b.decode()
         except UnicodeDecodeError as e:
-            raise UnicodeDecodeError(
-                str(e) + '\nFile format is wrong?')
+            raise ValueError('File format is wrong?')
         size += 1
         if char == ' ' or char == os.linesep:
             continue
@@ -586,8 +586,9 @@ def save_ark(ark, array_dict, scp=None, append=False, text=False,
             offset = 0
         size = 0
         for key in array_dict:
-            fd.write((key + ' ').encode())
-            size += len(key) + 1
+            encode_key = (key + ' ').encode()
+            fd.write(encode_key)
+            size += len(encode_key)
             pos_list.append(size)
             if as_bytes:
                 byte = bytes(array_dict[key])
