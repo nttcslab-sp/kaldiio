@@ -1,4 +1,6 @@
+# coding: utf-8
 import glob
+import io
 import os
 
 import numpy as np
@@ -30,7 +32,7 @@ def test_write_read(tmpdir, shape1, shape2, endian, dtype):
 
     a = np.random.rand(*shape1).astype(dtype)
     b = np.random.rand(*shape2).astype(dtype)
-    origin = {'a': a, 'b': b}
+    origin = {u'Ï,é,à': a, u'あいうえお': b}
     kaldiio.save_ark(path.join('a.ark').strpath, origin,
                      scp=path.join('b.scp').strpath, endian=endian)
 
@@ -39,7 +41,7 @@ def test_write_read(tmpdir, shape1, shape2, endian, dtype):
     d5 = {k: v
           for k, v in kaldiio.load_scp(path.join('b.scp').strpath,
                                        endian=endian).items()}
-    with open(path.join('a.ark').strpath, 'rb') as fd:
+    with io.open(path.join('a.ark').strpath, 'rb') as fd:
         d6 = {k: v for k, v in
               kaldiio.load_ark(fd, endian=endian)}
     _compare(d2, origin)
@@ -54,15 +56,15 @@ def test_write_read_multiark(tmpdir, endian, dtype):
 
     a = np.random.rand(1000, 120).astype(dtype)
     b = np.random.rand(10, 120).astype(dtype)
-    origin = {'a': a, 'b': b}
+    origin = {u'Ï,é,à': a, u'あいうえお': b}
 
     kaldiio.save_ark(path.join('a.ark').strpath, origin,
                      scp=path.join('b.scp').strpath, endian=endian)
 
     c = np.random.rand(1000, 120).astype(dtype)
     d = np.random.rand(10, 120).astype(dtype)
-    origin.update({'c': c, 'd': d})
-    with open(path.join('b.scp').strpath, 'a') as f:
+    origin.update({u'c': c, u'd': d})
+    with io.open(path.join('b.scp').strpath, 'a', encoding='utf-8') as f:
         kaldiio.save_ark(path.join('b.ark').strpath, origin,
                          scp=f, endian=endian)
 
@@ -78,7 +80,7 @@ def test_write_read_sequential(tmpdir, endian):
 
     a = np.random.rand(1000, 120).astype(np.float32)
     b = np.random.rand(10, 120).astype(np.float32)
-    origin = {'a': a, 'b': b}
+    origin = {u'Ï,é,à': a, u'あいうえお': b}
     kaldiio.save_ark(path.join('a.ark').strpath, origin,
                      scp=path.join('b.scp').strpath, endian=endian)
 
@@ -94,15 +96,15 @@ def test_write_read_multiark_sequential(tmpdir, endian):
 
     a = np.random.rand(1000, 120).astype(np.float32)
     b = np.random.rand(10, 120).astype(np.float32)
-    origin = {'a': a, 'b': b}
+    origin = {u'Ï,é,à': a, u'あいうえお': b}
 
     kaldiio.save_ark(path.join('a.ark').strpath, origin,
                      scp=path.join('b.scp').strpath, endian=endian)
 
     c = np.random.rand(1000, 120).astype(np.float32)
     d = np.random.rand(10, 120).astype(np.float32)
-    origin.update({'c': c, 'd': d})
-    with open(path.join('b.scp').strpath, 'a') as f:
+    origin.update({u'c': c, u'd': d})
+    with io.open(path.join('b.scp').strpath, 'a', encoding='utf-8') as f:
         kaldiio.save_ark(path.join('b.ark').strpath, origin,
                          scp=f, endian=endian)
 
@@ -116,7 +118,7 @@ def test_write_read_ascii(tmpdir):
     path = tmpdir.mkdir('test')
     a = np.random.rand(10, 10).astype(np.float32)
     b = np.random.rand(5, 35).astype(np.float32)
-    origin = {'a': a, 'b': b}
+    origin = {u'Ï,é,à': a, u'あいうえお': b}
     kaldiio.save_ark(path.join('a.ark').strpath, origin,
                      scp=path.join('a.scp').strpath, text=True)
     d2 = {k: v for k, v in kaldiio.load_ark(path.join('a.ark').strpath)}
@@ -132,7 +134,7 @@ def test_write_read_int32_vector(tmpdir, endian):
 
     a = np.random.randint(1, 128, 10, dtype=np.int32)
     b = np.random.randint(1, 128, 10, dtype=np.int32)
-    origin = {'a': a, 'b': b}
+    origin = {u'Ï,é,à': a, u'あいうえお': b}
     kaldiio.save_ark(path.join('a.ark').strpath, origin,
                      scp=path.join('b.scp').strpath,
                      endian=endian)
@@ -142,7 +144,7 @@ def test_write_read_int32_vector(tmpdir, endian):
     d5 = {k: v
           for k, v in kaldiio.load_scp(path.join('b.scp').strpath,
                                        endian=endian).items()}
-    with open(path.join('a.ark').strpath, 'rb') as fd:
+    with io.open(path.join('a.ark').strpath, 'rb') as fd:
         d6 = {k: v for k, v in kaldiio.load_ark(fd, endian=endian)}
     _compare(d2, origin)
     _compare(d5, origin)
@@ -154,7 +156,7 @@ def test_write_read_int32_vector_ascii(tmpdir):
 
     a = np.random.randint(1, 128, 10, dtype=np.int32)
     b = np.random.randint(1, 128, 10, dtype=np.int32)
-    origin = {'a': a, 'b': b}
+    origin = {u'Ï,é,à': a, u'あいうえお': b}
     kaldiio.save_ark(path.join('a.ark').strpath, origin,
                      scp=path.join('b.scp').strpath,
                      text=True)
@@ -162,7 +164,7 @@ def test_write_read_int32_vector_ascii(tmpdir):
     d2 = {k: v for k, v in kaldiio.load_ark(path.join('a.ark').strpath)}
     d5 = {k: v
           for k, v in kaldiio.load_scp(path.join('b.scp').strpath).items()}
-    with open(path.join('a.ark').strpath, 'r') as fd:
+    with io.open(path.join('a.ark').strpath, 'rb') as fd:
         d6 = {k: v for k, v in kaldiio.load_ark(fd)}
     _compare_allclose(d2, origin)
     _compare_allclose(d5, origin)
@@ -190,7 +192,7 @@ def test_write_read_compress(tmpdir, compression_method, endian):
 
     a = np.random.rand(1000, 120).astype(np.float32)
     b = np.random.rand(10, 120).astype(np.float32)
-    origin = {'a': a, 'b': b}
+    origin = {u'Ï,é,à': a, u'あいうえお': b}
     kaldiio.save_ark(path.join('a.ark').strpath, origin,
                      scp=path.join('b.scp').strpath,
                      compression_method=compression_method,
@@ -201,7 +203,7 @@ def test_write_read_compress(tmpdir, compression_method, endian):
     d5 = {k: v
           for k, v in kaldiio.load_scp(path.join('b.scp').strpath,
                                        endian=endian).items()}
-    with open(path.join('a.ark').strpath, 'rb') as fd:
+    with io.open(path.join('a.ark').strpath, 'rb') as fd:
         d6 = {k: v for k, v in kaldiio.load_ark(fd, endian=endian)}
     _compare_allclose(d2, origin, atol=1e-1)
     _compare_allclose(d5, origin, atol=1e-1)
@@ -213,13 +215,13 @@ def test_append_mode(tmpdir):
 
     a = np.random.rand(1000, 120).astype(np.float32)
     b = np.random.rand(10, 120).astype(np.float32)
-    origin = {'a': a, 'b': b}
+    origin = {u'Ï,é,à': a, u'あいうえお': b}
     kaldiio.save_ark(path.join('a.ark').strpath, origin,
                      scp=path.join('b.scp').strpath)
 
-    kaldiio.save_ark(path.join('a2.ark').strpath, {'a': a},
+    kaldiio.save_ark(path.join('a2.ark').strpath, {u'Ï,é,à': a},
                      scp=path.join('b2.scp').strpath, append=True)
-    kaldiio.save_ark(path.join('a2.ark').strpath, {'b': b},
+    kaldiio.save_ark(path.join('a2.ark').strpath, {u'あいうえお': b},
                      scp=path.join('b2.scp').strpath, append=True)
     d1 = {k: v for k, v in kaldiio.load_ark(path.join('a.ark').strpath)}
     d2 = {k: v

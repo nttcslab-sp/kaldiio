@@ -20,6 +20,7 @@ from kaldiio.utils import LazyLoader
 from kaldiio.utils import MultiFileDescriptor
 from kaldiio.utils import open_like_kaldi
 from kaldiio.utils import open_or_fd
+from kaldiio.utils import py2_default_encoding
 from kaldiio.utils import seekable
 from kaldiio.wavio import read_wav
 from kaldiio.wavio import read_wav_scipy
@@ -55,7 +56,7 @@ def load_scp(fname, endian='<', separator=None, as_bytes=False,
                     raise ValueError(
                         'Invalid line is found:\n>   {}'.format(line))
                 token, arkname = seps
-                loader[token] = arkname.strip()
+                loader[token] = arkname.rstrip()
         return loader
     else:
         return SegmentsExtractor(fname, separator=separator,
@@ -86,7 +87,7 @@ def load_scp_sequential(fname, endian='<', separator=None, as_bytes=False,
                         raise ValueError(
                             'Invalid line is found:\n>   {}'.format(line))
                     token, arkname = seps
-                    arkname = arkname.strip()
+                    arkname = arkname.rstrip()
 
                     ark, offset, slices = _parse_arkpath(arkname)
 
@@ -140,9 +141,9 @@ class SegmentsExtractor(Mapping):
 
         self.segments = segments
         self._segments_dict = {}
-        with open(self.segments) as f:
+        with open_or_fd(self.segments, 'r') as f:
             for l in f:
-                sps = l.strip().split(separator)
+                sps = l.rstrip().split(separator)
                 if len(sps) != 4:
                     raise RuntimeError('Format is invalid: {}'.format(l))
                 uttid, recodeid, st, et = sps
@@ -223,7 +224,7 @@ def _parse_arkpath(ark_name):
         >>> _parse_arkpath('cat "fo:o.ark" |')
         'cat "fo:o.ark" |', None, None
     """
-    if ark_name.strip()[-1] == '|' or ark_name.strip()[0] == '|':
+    if ark_name.rstrip()[-1] == '|' or ark_name.rstrip()[0] == '|':
         # Something like: "| cat foo" or "cat bar|" shouldn't be parsed
         return ark_name, None, None
 
@@ -299,17 +300,19 @@ def read_token(fd):
         fd (file):
     """
     token = []
+    # Keep the loop until finding ' ' or end of char
     while True:
-        char = fd.read(1)
-        if isinstance(char, binary_type):
-            char = char.decode()
-        if char == ' ' or char == '':
+        c = fd.read(1)
+        if c == b' ' or c == b'':
             break
-        else:
-            token.append(char)
+        token.append(c)
     if len(token) == 0:  # End of file
         return None
-    return ''.join(token)
+    if PY3:
+        decoded = b''.join(token).decode()
+    else:
+        decoded = b''.join(token).decode(py2_default_encoding)
+    return decoded
 
 
 def read_kaldi(fd, endian='<', return_size=False, use_scipy_wav=False):
@@ -476,11 +479,14 @@ def read_ascii_mat(fd, return_size=False):
 
     # Find '[' char
     while True:
+        b = fd.read(1)
         try:
-            char = fd.read(1).decode()
-        except UnicodeDecodeError as e:
-            raise UnicodeDecodeError(
-                str(e) + '\nFile format is wrong?')
+            if PY3:
+                char = b.decode()
+            else:
+                char = b.decode(py2_default_encoding)
+        except UnicodeDecodeError:
+            raise ValueError('File format is wrong?')
         size += 1
         if char == ' ' or char == os.linesep:
             continue
@@ -495,11 +501,17 @@ def read_ascii_mat(fd, return_size=False):
     # Read data
     ndmin = 1
     while True:
-        char = fd.read(1).decode()
+        if PY3:
+            char = fd.read(1).decode()
+        else:
+            char = fd.read(1).decode(py2_default_encoding)
         size += 1
         if hasparent:
             if char == ']':
-                char = fd.read(1).decode()
+                if PY3:
+                    char = fd.read(1).decode()
+                else:
+                    char = fd.read(1).decode(py2_default_encoding)
                 size += 1
                 assert char == os.linesep or char == ''
                 break
@@ -582,8 +594,12 @@ def save_ark(ark, array_dict, scp=None, append=False, text=False,
             offset = 0
         size = 0
         for key in array_dict:
-            fd.write((key + ' ').encode())
-            size += len(key) + 1
+            if PY3:
+                encode_key = (key + ' ').encode()
+            else:
+                encode_key = (key + ' ').encode(py2_default_encoding)
+            fd.write(encode_key)
+            size += len(encode_key)
             pos_list.append(size)
             if as_bytes:
                 byte = bytes(array_dict[key])
@@ -606,7 +622,7 @@ def save_ark(ark, array_dict, scp=None, append=False, text=False,
         name = ark if isinstance(ark, string_types) else ark.name
         with open_or_fd(scp, mode) as fd:
             for key, position in zip(array_dict, pos_list):
-                fd.write(key + ' ' + name + ':' +
+                fd.write(key + u' ' + name + ':' +
                          str(position + offset) + os.linesep)
 
 
@@ -730,7 +746,10 @@ def write_array_ascii(fd, array, digit='.12g'):
             size += 3
             for i in row:
                 string = format(i, digit)
-                fd.write(string.encode())
+                if PY3:
+                    fd.write(string.encode())
+                else:
+                    fd.write(string.encode(py2_default_encoding))
                 fd.write(b' ')
                 size += len(string) + 1
         fd.write(b']\n')
@@ -740,7 +759,10 @@ def write_array_ascii(fd, array, digit='.12g'):
         size += 1
         for i in array:
             string = format(i, digit)
-            fd.write(string.encode())
+            if PY3:
+                fd.write(string.encode())
+            else:
+                fd.write(string.encode(py2_default_encoding))
             fd.write(b' ')
             size += len(string) + 1
         fd.write(b']\n')
