@@ -1,6 +1,7 @@
 # coding: utf-8
 import glob
 import os
+import sys
 
 import numpy as np
 import pytest
@@ -9,6 +10,11 @@ import kaldiio
 from kaldiio.matio import _parse_arkpath
 
 arkdir = os.path.join(os.path.dirname(__file__), 'arks')
+
+if sys.version_info[0] == '2':
+    import sys
+    exec('reload(sys)')
+    sys.setdefaultencoding('utf-8')
 
 
 @pytest.mark.parametrize('fname', glob.glob(os.path.join(arkdir, '*.ark')))
