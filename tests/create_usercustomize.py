@@ -3,8 +3,8 @@ import site
 import sys
 
 
+print(sys.version_info)
 if sys.version_info[0] == '2':
-    print(sys.version_info)
     up = site.getusersitepackages()
     if not os.path.exists(up):
         os.makedirs(up)
