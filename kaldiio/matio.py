@@ -483,7 +483,7 @@ def read_ascii_mat(fd, return_size=False):
         b = fd.read(1)
         try:
             char = b.decode()
-        except UnicodeDecodeError as e:
+        except UnicodeDecodeError:
             raise ValueError('File format is wrong?')
         size += 1
         if char == ' ' or char == os.linesep:
