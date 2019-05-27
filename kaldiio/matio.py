@@ -300,16 +300,20 @@ def read_token(fd):
     """
     token = []
     while True:
-        char = fd.read(1)
-        if isinstance(char, binary_type):
-            char = char.decode()
-        if char == ' ' or char == '':
-            break
-        else:
-            token.append(char)
+        b = fd.read(1)
+        if isinstance(b, binary_type):
+            try:
+                c = b.decode()
+            except UnicodeDecodeError:
+                pass
+            else:
+                if c == ' ' or c == '':
+                    break
+        token.append(b)
     if len(token) == 0:  # End of file
         return None
-    return ''.join(token)
+    decoded = b''.join(token).decode()
+    return decoded
 
 
 def read_kaldi(fd, endian='<', return_size=False, use_scipy_wav=False):
