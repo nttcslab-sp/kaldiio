@@ -17,6 +17,8 @@ if PY3:
 else:
     from collections import MutableMapping
 
+py2_default_encoding = 'utf-8'
+
 
 if PY3:
     def my_popen(cmd, mode='r', buffering=-1):
@@ -154,7 +156,13 @@ def open_like_kaldi(name, mode='r'):
 def open_or_fd(fname, mode):
     # If fname is a file name
     if isinstance(fname, string_types):
-        f = io.open(fname, mode)
+        if PY3:
+            f = open(fname, mode)
+        else:
+            if 'b' not in mode:
+                f = io.open(fname, mode, encoding=py2_default_encoding)
+            else:
+                f = io.open(fname, mode)
     # If fname is a file descriptor
     else:
         if PY3 and 'b' in mode and isinstance(fname, TextIOBase):
