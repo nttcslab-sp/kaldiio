@@ -1,5 +1,6 @@
 # coding: utf-8
 import glob
+import io
 import os
 
 import numpy as np
@@ -40,7 +41,7 @@ def test_write_read(tmpdir, shape1, shape2, endian, dtype):
     d5 = {k: v
           for k, v in kaldiio.load_scp(path.join('b.scp').strpath,
                                        endian=endian).items()}
-    with open(path.join('a.ark').strpath, 'rb') as fd:
+    with io.open(path.join('a.ark').strpath, 'rb') as fd:
         d6 = {k: v for k, v in
               kaldiio.load_ark(fd, endian=endian)}
     _compare(d2, origin)
@@ -63,7 +64,7 @@ def test_write_read_multiark(tmpdir, endian, dtype):
     c = np.random.rand(1000, 120).astype(dtype)
     d = np.random.rand(10, 120).astype(dtype)
     origin.update({u'c': c, u'd': d})
-    with open(path.join('b.scp').strpath, 'a') as f:
+    with io.open(path.join('b.scp').strpath, 'a', encoding='utf-8') as f:
         kaldiio.save_ark(path.join('b.ark').strpath, origin,
                          scp=f, endian=endian)
 
@@ -103,7 +104,7 @@ def test_write_read_multiark_sequential(tmpdir, endian):
     c = np.random.rand(1000, 120).astype(np.float32)
     d = np.random.rand(10, 120).astype(np.float32)
     origin.update({u'c': c, u'd': d})
-    with open(path.join('b.scp').strpath, 'a') as f:
+    with io.open(path.join('b.scp').strpath, 'a', encoding='utf-8') as f:
         kaldiio.save_ark(path.join('b.ark').strpath, origin,
                          scp=f, endian=endian)
 
@@ -143,7 +144,7 @@ def test_write_read_int32_vector(tmpdir, endian):
     d5 = {k: v
           for k, v in kaldiio.load_scp(path.join('b.scp').strpath,
                                        endian=endian).items()}
-    with open(path.join('a.ark').strpath, 'rb') as fd:
+    with io.open(path.join('a.ark').strpath, 'rb') as fd:
         d6 = {k: v for k, v in kaldiio.load_ark(fd, endian=endian)}
     _compare(d2, origin)
     _compare(d5, origin)
@@ -163,7 +164,7 @@ def test_write_read_int32_vector_ascii(tmpdir):
     d2 = {k: v for k, v in kaldiio.load_ark(path.join('a.ark').strpath)}
     d5 = {k: v
           for k, v in kaldiio.load_scp(path.join('b.scp').strpath).items()}
-    with open(path.join('a.ark').strpath, 'r') as fd:
+    with io.open(path.join('a.ark').strpath, 'rb') as fd:
         d6 = {k: v for k, v in kaldiio.load_ark(fd)}
     _compare_allclose(d2, origin)
     _compare_allclose(d5, origin)
@@ -202,7 +203,7 @@ def test_write_read_compress(tmpdir, compression_method, endian):
     d5 = {k: v
           for k, v in kaldiio.load_scp(path.join('b.scp').strpath,
                                        endian=endian).items()}
-    with open(path.join('a.ark').strpath, 'rb') as fd:
+    with io.open(path.join('a.ark').strpath, 'rb') as fd:
         d6 = {k: v for k, v in kaldiio.load_ark(fd, endian=endian)}
     _compare_allclose(d2, origin, atol=1e-1)
     _compare_allclose(d5, origin, atol=1e-1)
