@@ -112,7 +112,7 @@ The followings are **not supported**
 ### Similar projects
 - Python-C++ binding 
    - https://github.com/pykaldi/pykaldi
-      - I recommend this module if you aren't particular about pure python.
+      - Looks great. I recommend pykaldi if you aren't particular about pure python.
    - https://github.com/janchorowski/kaldi-python/
       - This seems not enough maintained now.
    - https://github.com/t13m/kaldi-readers-for-tensorflow
