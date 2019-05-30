@@ -110,19 +110,18 @@ The followings are **not supported**
 - Lattice file
 
 ### Similar projects
-
+- Python-C++ binding 
+   - https://github.com/pykaldi/pykaldi
+      - I recommend this module if you aren't particular about pure python.
+   - https://github.com/janchorowski/kaldi-python/
+      - This seems not enough maintained now.
+   - https://github.com/t13m/kaldi-readers-for-tensorflow
+      - Ark reader for tensorflow
 - Pure Python
    - https://github.com/vesis84/kaldi-io-for-python
       - `kaldiio` is based on this module, but `kaldiio` supports more features than it.
    - https://github.com/funcwj/kaldi-python-io
       - Python>=3.6. `nnet3-egs`is also supported.
-- Python-C++ binding 
-   - https://github.com/pykaldi/pykaldi
-      - Python wrapper of Kaldi　which supports many kaldi classes. I recommend this if you aren't particular about pure python.
-   - https://github.com/janchorowski/kaldi-python/
-      - This seems not enough maintained now.
-   - https://github.com/t13m/kaldi-readers-for-tensorflow
-      - Ark reader for tensorflow
 
 ## Install 
 
