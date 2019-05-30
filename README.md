@@ -39,13 +39,13 @@ copy-feats ark:test.ark ark,t:text.ark
 
 1. `ark` can be flushed to and from unix pipe.
 
-        cat test.ark | copy-feats ark:- ark,t:- | less # Show the content of the ark
+        cat test.ark | copy-feats ark:- ark,t:- | less # Show the contents in the ark
     `-` indicates standard input stream or output stream. 
 1. Unix command can be used as `read-specifier` and `wspecifier`
 
         copy-feats ark:'gunzip -c some.ark.gz |' ark:some.ark
 
-`kaldiio` supports these feature entirely.
+`kaldiio` also supports these feature entirely like `copy-feats` of kaldi.
 
 
 #### Scp file
