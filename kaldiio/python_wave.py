@@ -167,7 +167,7 @@ class Wave_read(object):
     def __init__(self, f):
         self._i_opened_the_file = None
         if isinstance(f, str):
-            f = open(f, 'rb')
+            f = builtin_open(f, 'rb')
             self._i_opened_the_file = f
         # else, assume it is an open file object already
         try:
@@ -316,7 +316,7 @@ class Wave_write(object):
     def __init__(self, f):
         self._i_opened_the_file = None
         if isinstance(f, str):
-            f = open(f, 'wb')
+            f = builtin_open(f, 'wb')
             self._i_opened_the_file = f
         try:
             self.initfp(f)
@@ -514,6 +514,9 @@ class Wave_write(object):
         self._file.write(struct.pack('<L', self._datawritten))
         self._file.seek(curpos, 0)
         self._datalength = self._datawritten
+
+
+builtin_open = open
 
 
 def open(f, mode=None):
