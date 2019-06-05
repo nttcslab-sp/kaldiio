@@ -1,11 +1,8 @@
 from __future__ import unicode_literals
 
-from io import BytesIO
-
 import numpy as np
 
 import kaldiio.python_wave as wave
-from kaldiio.utils import seekable
 
 
 def read_wav(fd, return_size=False):
