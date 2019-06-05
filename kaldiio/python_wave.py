@@ -1,5 +1,4 @@
 import audioop
-import builtins
 from chunk import Chunk
 from collections import namedtuple
 import struct
@@ -168,7 +167,7 @@ class Wave_read(object):
     def __init__(self, f):
         self._i_opened_the_file = None
         if isinstance(f, str):
-            f = builtins.open(f, 'rb')
+            f = open(f, 'rb')
             self._i_opened_the_file = f
         # else, assume it is an open file object already
         try:
@@ -317,7 +316,7 @@ class Wave_write(object):
     def __init__(self, f):
         self._i_opened_the_file = None
         if isinstance(f, str):
-            f = builtins.open(f, 'wb')
+            f = open(f, 'wb')
             self._i_opened_the_file = f
         try:
             self.initfp(f)
