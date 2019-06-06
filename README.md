@@ -21,13 +21,13 @@ A pure python module for reading and writing kaldi ark files
 This is an IO module for `Kaldi-ark` and `Kaldi-scp` implemented in pure Python language. 
 `ark` and `scp` are file formats used in [kaldi](https://github.com/kaldi-asr/kaldi) in order to archive some objects, and they are typically used for dumping feature matrices.
 
-More detail about the File-IO in `Kaldi`: http://kaldi-asr.org/doc/io.html
+More detail about the File-IO in `Kaldi-asr`: http://kaldi-asr.org/doc/io.html
 
-#### Ark file and copy-feats
-`ark` is a archive format to save any Kaldi objects. This library mainly support KaldiMatrix/KaldiVector.
+#### Basic of File IO in kaldi: Ark and copy-feats
+`ark` is a archive format to save any `Kaldi objects`. This library mainly support `KaldiMatrix/KaldiVector`.
 This ia an example of ark of KaldiMatrix: [ark file](tests/arks/test.ark)
 
-If you have kaldi, you can convert it to text format as following
+If you have `Kaldi`, you can convert it to text format as following
 
 ```bash
 # copy-feats <read-specifier> <write-specifier>
@@ -61,7 +61,7 @@ The number after colon points a starting address the object of the file.
 
 `scp` looks very simple format, but has several powerful features.
 
-1. It can be convert to `ark` file and can be generated from `ark`
+1. Mutual conversion can be done between`ark` and `scp`
 
         copy-feats scp:foo.scp ark:foo.ark  # scp -> ark
         copy-feats ark:foo.ark ark,scp:bar.ark,bar.scp  # ark -> ark,scp
@@ -114,7 +114,7 @@ The followings are **not supported**
    - https://github.com/pykaldi/pykaldi
       - Looks great. I recommend pykaldi if you aren't particular about pure python.
    - https://github.com/janchorowski/kaldi-python/
-      - This seems not enough maintained now.
+      - Maybe not enough maintained now.
    - https://github.com/t13m/kaldi-readers-for-tensorflow
       - Ark reader for tensorflow
 - Pure Python
