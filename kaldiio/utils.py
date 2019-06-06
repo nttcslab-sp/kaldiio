@@ -8,14 +8,14 @@ import subprocess
 import sys
 import warnings
 
-from six import string_types
-
 PY3 = sys.version_info[0] == 3
 
 if PY3:
     from collections.abc import MutableMapping
+    string_types = str,
 else:
     from collections import MutableMapping
+    string_types = basestring,  # noqa: F821
 
 py2_default_encoding = 'utf-8'
 

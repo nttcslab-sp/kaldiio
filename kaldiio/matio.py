@@ -8,11 +8,8 @@ import re
 import struct
 import sys
 import warnings
-import wave
 
 import numpy as np
-from six import binary_type
-from six import string_types
 
 from kaldiio.compression_header import GlobalHeader
 from kaldiio.compression_header import PerColHeader
@@ -23,15 +20,18 @@ from kaldiio.utils import open_or_fd
 from kaldiio.utils import py2_default_encoding
 from kaldiio.utils import seekable
 from kaldiio.wavio import read_wav
-from kaldiio.wavio import read_wav_scipy
 from kaldiio.wavio import write_wav
 
 PY3 = sys.version_info[0] == 3
 
 if PY3:
     from collections.abc import Mapping
+    binary_type = bytes
+    string_types = str,
 else:
     from collections import Mapping
+    binary_type = str
+    string_types = basestring,  # noqa: F821
 
 
 def load_scp(fname, endian='<', separator=None, as_bytes=False,
@@ -94,15 +94,13 @@ def load_scp_sequential(fname, endian='<', separator=None, as_bytes=False,
                     if prev_ark == ark:
                         arkfd = prev_arkfd
                         mat = _load_mat(arkfd, offset, slices, endian=endian,
-                                        as_bytes=as_bytes,
-                                        use_scipy_wav=False)
+                                        as_bytes=as_bytes)
                     else:
                         if prev_arkfd is not None:
                             prev_arkfd.close()
                         arkfd = open_like_kaldi(ark, 'rb')
                         mat = _load_mat(arkfd, offset, slices, endian=endian,
-                                        as_bytes=as_bytes,
-                                        use_scipy_wav=False)
+                                        as_bytes=as_bytes)
 
                     prev_ark = ark
                     prev_arkfd = arkfd
@@ -203,8 +201,7 @@ def load_mat(ark_name, endian='<', as_bytes=False):
     assert endian in ('<', '>'), endian
     ark, offset, slices = _parse_arkpath(ark_name)
     with open_like_kaldi(ark, 'rb') as fd:
-        return _load_mat(fd, offset, slices, endian=endian, as_bytes=as_bytes,
-                         use_scipy_wav=offset is None)
+        return _load_mat(fd, offset, slices, endian=endian, as_bytes=as_bytes)
 
 
 def _parse_arkpath(ark_name):
@@ -259,12 +256,11 @@ def _convert_to_slice(string):
     return tuple(slices)
 
 
-def _load_mat(fd, offset, slices=None, endian='<', as_bytes=False,
-              use_scipy_wav=False):
+def _load_mat(fd, offset, slices=None, endian='<', as_bytes=False):
     if offset is not None:
         fd.seek(offset)
     if not as_bytes:
-        array = read_kaldi(fd, endian, use_scipy_wav=use_scipy_wav)
+        array = read_kaldi(fd, endian)
     else:
         array = fd.read()
 
@@ -315,7 +311,7 @@ def read_token(fd):
     return decoded
 
 
-def read_kaldi(fd, endian='<', return_size=False, use_scipy_wav=False):
+def read_kaldi(fd, endian='<', return_size=False):
     """Load kaldi
 
     Args:
@@ -334,13 +330,7 @@ def read_kaldi(fd, endian='<', return_size=False, use_scipy_wav=False):
 
     if binary_flag[:4] == b'RIFF':
         # array: Tuple[int, np.ndarray]
-        if use_scipy_wav:
-            array, size = read_wav_scipy(fd, return_size=True)
-        else:
-            try:
-                array, size = read_wav(fd, return_size=True)
-            except wave.Error:
-                array, size = read_wav_scipy(fd, return_size=True)
+        array, size = read_wav(fd, return_size=True)
 
     # Load as binary
     elif binary_flag[:2] == b'\0B':

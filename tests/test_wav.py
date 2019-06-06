@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pytest
 
@@ -7,12 +9,11 @@ from kaldiio.matio import load_scp_sequential
 from kaldiio.matio import save_ark
 from kaldiio.utils import open_like_kaldi
 from kaldiio.wavio import read_wav
-from kaldiio.wavio import read_wav_scipy
 from kaldiio.wavio import write_wav
 
 
 @pytest.mark.parametrize('dtype', [np.uint8, np.int16])
-@pytest.mark.parametrize('func', [read_wav, read_wav_scipy])
+@pytest.mark.parametrize('func', [read_wav])
 def test_read_wav(tmpdir, func, dtype):
     path = tmpdir.mkdir('test')
     wav = path.join('a.wav').strpath
@@ -81,14 +82,14 @@ def test_scpwav_stream(tmpdir, func, dtype):
     scp = path.join('wav.scp').strpath
 
     # Write as pcm16
-    array = np.random.randint(0, 10, 10, dtype=dtype)
+    array = np.random.randint(0, 10, 40, dtype=dtype).reshape(5, 8)
     write_wav(wav, 8000, array)
 
     array2 = np.random.randint(0, 10, 10, dtype=dtype)
     write_wav(wav2, 8000, array2)
 
     with open(scp, 'w') as f:
-        f.write('aaa cat {wav} |\n'.format(wav=wav))
+        f.write('aaa sox {wav} -t wav - |\n'.format(wav=wav))
         f.write('bbb cat {wav} |\n'.format(wav=wav2))
     rate, test = dict(func(scp))['aaa']
     rate, test2 = dict(func(scp))['bbb']
@@ -154,3 +155,17 @@ def test_segments(tmpdir, func, dtype):
         d['utt3'][1], array1[int(0.4 * rate):int(0.5 * rate)])
     np.testing.assert_array_equal(
         d['utt4'][1], array1[int(0.6 * rate):int(0.8 * rate)])
+
+
+@pytest.mark.parametrize('func', [load_scp, load_scp_sequential])
+def test_incorrect_header_wav(tmpdir, func):
+    wav = os.path.join(os.path.dirname(__file__), 'arks',
+                       'incorrect_header.wav')
+    _, array = read_wav(wav)
+    path = tmpdir.mkdir('test')
+    scp = path.join('wav.scp').strpath
+
+    with open(scp, 'w') as f:
+        f.write('aaa sox {wav} -t wav - |\n'.format(wav=wav))
+    rate, test = dict(func(scp))['aaa']
+    np.testing.assert_array_equal(array, test)

@@ -5,6 +5,7 @@ python:
 - '3.5'
 - '3.6'
 install:
+- sudo apt-get install -y sox
 - pip install -e .
 - pip install pycodestyle flake8 codecov
 script:
