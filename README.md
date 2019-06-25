@@ -24,7 +24,7 @@ In this section, we describe the basic concept of `ark` and `scp`. More detail a
 
 
 #### Basic of File IO in kaldi: Ark and copy-feats
-`ark` is a archive format to save any `Kaldi objects`. This library mainly support `KaldiMatrix/KaldiVector`.
+`ark` is an archive format to save any `Kaldi objects`. This library mainly support `KaldiMatrix/KaldiVector`.
 This ia an example of ark file of KaldiMatrix: [ark file](tests/arks/test.ark)
 
 If you have `Kaldi`, you can convert it to text format as following
