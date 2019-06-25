@@ -17,15 +17,15 @@ A pure python module for reading and writing kaldi ark files
 - [More low level API](#more-low-level-api)
 
 ## Introduction
-### What is this? What are `ark` and `scp`?
-This is an IO module for `Kaldi-ark` and `Kaldi-scp` implemented in pure Python language. 
-`ark` and `scp` are file formats used in [kaldi](https://github.com/kaldi-asr/kaldi) in order to archive some objects, and they are typically used for dumping feature matrices.
+### What are `ark` and `scp`?
+`kaldiiio` is an IO utility  implemented in pure Python language for several file formats used in [kaldi](https://github.com/kaldi-asr/kaldi), which are named as`ark` and `scp`.  `ark` and `scp` are used in  in order to archive some objects defined in Kaldi, typically it is Matrix object of Kaldi.
 
-More detail about the File-IO in `Kaldi-asr`: http://kaldi-asr.org/doc/io.html
+In this section, we describe the basic concept of `ark` and `scp`. More detail about the File-IO in `Kaldi-asr`: http://kaldi-asr.org/doc/io.html
+
 
 #### Basic of File IO in kaldi: Ark and copy-feats
 `ark` is a archive format to save any `Kaldi objects`. This library mainly support `KaldiMatrix/KaldiVector`.
-This ia an example of ark of KaldiMatrix: [ark file](tests/arks/test.ark)
+This ia an example of ark file of KaldiMatrix: [ark file](tests/arks/test.ark)
 
 If you have `Kaldi`, you can convert it to text format as following
 
@@ -45,9 +45,6 @@ copy-feats ark:test.ark ark,t:text.ark
 
         copy-feats ark:'gunzip -c some.ark.gz |' ark:some.ark
 
-`kaldiio` also supports these feature entirely like `copy-feats` of kaldi.
-
-
 #### Scp file
 `scp` is a text file such as,
 
@@ -56,17 +53,16 @@ uttid1 /some/where/feats.ark:123
 uttid2 /some/where/feats.ark:156
 uttid3 /some/where/feats.ark:245
 ```
-The first column indicates the utterance id and the second is the file path of matrix/vector of kaldi formats. 
-The number after colon points a starting address the object of the file.
+The first column, `uttid1`, indicates the utterance id and the second, `/some/where/feats.ark:123`, is the file path of matrix/vector of kaldi formats.  The number after colon is a starting addressof the object of the file.
 
 `scp` looks very simple format, but has several powerful features.
 
-1. Mutual conversion can be done between`ark` and `scp`
+1. Mutual conversion between`ark` and `scp`
 
         copy-feats scp:foo.scp ark:foo.ark  # scp -> ark
         copy-feats ark:foo.ark ark,scp:bar.ark,bar.scp  # ark -> ark,scp
 
-1. Unix command can be empeded.
+1. Unix command can be used insead of direct file path
 
     For example, the following file is equivalent to the first scp.
     
