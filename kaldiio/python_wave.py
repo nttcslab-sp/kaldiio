@@ -149,7 +149,6 @@ class Wave_read(object):
             except EOFError:
                 break
             chunkname = chunk.getname()
-            print(chunkname)
             if chunkname == b'fmt ':
                 self._read_fmt_chunk(chunk)
                 self._fmt_chunk_read = 1
