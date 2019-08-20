@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 from functools import partial
 from io import BytesIO
 from io import StringIO
-import os
 import re
 import struct
 import sys
@@ -478,7 +477,7 @@ def read_ascii_mat(fd, return_size=False):
         except UnicodeDecodeError:
             raise ValueError('File format is wrong?')
         size += 1
-        if char == ' ' or char == os.linesep:
+        if char == ' ' or char == '\n':
             continue
         elif char == '[':
             hasparent = True
@@ -503,15 +502,15 @@ def read_ascii_mat(fd, return_size=False):
                 else:
                     char = fd.read(1).decode(py2_default_encoding)
                 size += 1
-                assert char == os.linesep or char == ''
+                assert char == '\n' or char == ''
                 break
-            elif char == os.linesep:
+            elif char == '\n':
                 ndmin = 2
             elif char == '':
                 raise ValueError(
                     'There are no corresponding bracket \']\' with \'[\'')
         else:
-            if char == os.linesep or char == '':
+            if char == '\n' or char == '':
                 break
         string.append(char)
     string = ''.join(string)
@@ -613,7 +612,7 @@ def save_ark(ark, array_dict, scp=None, append=False, text=False,
         with open_or_fd(scp, mode) as fd:
             for key, position in zip(array_dict, pos_list):
                 fd.write(key + u' ' + name + ':' +
-                         str(position + offset) + os.linesep)
+                         str(position + offset) + '\n')
 
 
 def save_mat(fname, array, endian='<', compression_method=None):
