@@ -189,7 +189,7 @@ with ReadHelper('ark:-') as reader:
 ```
 
 ### WriteHelper
-- Write matrices in a ark with scp
+- Write matrices and vectors in a ark with scp
 
 ```python
 import numpy
