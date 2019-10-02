@@ -55,6 +55,20 @@ def test_write_helper(tmpdir):
     _compare(from_scp, d)
 
 
+def test_write_helper_scp_ark(tmpdir):
+    path = tmpdir.strpath
+    d = {'foo': numpy.random.randn(10, 10),
+         'bar': numpy.random.randn(10, 10)}
+
+    with WriteHelper('scp,f,ark:{p}/out.scp,{p}/out.ark'.format(p=path)) as w:
+        for k, v in d.items():
+            w(k, v)
+    from_ark = dict(load_ark('{p}/out.ark'.format(p=path)))
+    from_scp = load_scp('{p}/out.scp'.format(p=path))
+    _compare(from_ark, d)
+    _compare(from_scp, d)
+
+
 def test_write_helper_ascii(tmpdir):
     path = tmpdir.strpath
     d = {'foo': numpy.random.randn(10, 10),
