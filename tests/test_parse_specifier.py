@@ -3,8 +3,24 @@ import pytest
 from kaldiio import parse_specifier
 
 
-def test_simple():
+def test_ark():
+    d = parse_specifier('ark:file.ark')
+    assert d['ark'] == 'file.ark'
+
+
+def test_scp():
+    d = parse_specifier('scp:file.scp')
+    assert d['scp'] == 'file.scp'
+
+
+def test_ark_scp():
     d = parse_specifier('ark,scp:file.ark,file.scp')
+    assert d['ark'] == 'file.ark'
+    assert d['scp'] == 'file.scp'
+
+
+def test_scp_ark():
+    d = parse_specifier('scp,ark:file.scp,file.ark')
     assert d['ark'] == 'file.ark'
     assert d['scp'] == 'file.scp'
 
