@@ -17,7 +17,7 @@ else:
     from collections import MutableMapping
     string_types = basestring,  # noqa: F821
 
-py2_default_encoding = 'utf-8'
+default_encoding = 'utf-8'
 
 
 if PY3:
@@ -156,13 +156,11 @@ def open_like_kaldi(name, mode='r'):
 def open_or_fd(fname, mode):
     # If fname is a file name
     if isinstance(fname, string_types):
+        encoding = None if 'b' in mode else default_encoding
         if PY3:
-            f = open(fname, mode)
+            f = open(fname, mode, encoding=encoding)
         else:
-            if 'b' not in mode:
-                f = io.open(fname, mode, encoding=py2_default_encoding)
-            else:
-                f = io.open(fname, mode)
+            f = io.open(fname, mode, encoding=encoding)
     # If fname is a file descriptor
     else:
         if PY3 and 'b' in mode and isinstance(fname, TextIOBase):
