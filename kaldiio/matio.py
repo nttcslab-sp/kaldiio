@@ -720,10 +720,7 @@ def write_array_ascii(fd, array, digit='.12g'):
             size += 3
             for i in row:
                 string = format(i, digit)
-                if PY3:
-                    fd.write(string.encode())
-                else:
-                    fd.write(string.encode(py2_default_encoding))
+                fd.write(string.encode(encoding=default_encoding))
                 fd.write(b' ')
                 size += len(string) + 1
         fd.write(b']\n')
@@ -733,10 +730,7 @@ def write_array_ascii(fd, array, digit='.12g'):
         size += 1
         for i in array:
             string = format(i, digit)
-            if PY3:
-                fd.write(string.encode())
-            else:
-                fd.write(string.encode(py2_default_encoding))
+            fd.write(string.encode(encoding=default_encoding))
             fd.write(b' ')
             size += len(string) + 1
         fd.write(b']\n')
