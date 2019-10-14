@@ -18,7 +18,7 @@ A pure python module for reading and writing kaldi ark files
 
 ## Introduction
 ### What are `ark` and `scp`?
-`kaldiiio` is an IO utility  implemented in pure Python language for several file formats used in [kaldi](https://github.com/kaldi-asr/kaldi), which are named as`ark` and `scp`.  `ark` and `scp` are used in  in order to archive some objects defined in Kaldi, typically it is Matrix object of Kaldi.
+`kaldiio` is an IO utility  implemented in pure Python language for several file formats used in [kaldi](https://github.com/kaldi-asr/kaldi), which are named as`ark` and `scp`.  `ark` and `scp` are used in  in order to archive some objects defined in Kaldi, typically it is Matrix object of Kaldi.
 
 In this section, we describe the basic concept of `ark` and `scp`. More detail about the File-IO in `Kaldi-asr`: http://kaldi-asr.org/doc/io.html
 
@@ -40,7 +40,7 @@ copy-feats ark:test.ark ark,t:text.ark
 1. `ark` can be flushed to and from unix pipe.
 
         cat test.ark | copy-feats ark:- ark,t:- | less # Show the contents in the ark
-    `-` indicates standard input stream or output stream. 
+    `-` indicates standard input stream or output stream.
 1. Unix command can be used as `read-specifier` and `wspecifier`
 
         copy-feats ark:'gunzip -c some.ark.gz |' ark:some.ark
@@ -65,7 +65,7 @@ The first column, `uttid1`, indicates the utterance id and the second, `/some/wh
 1. Unix command can be used insead of direct file path
 
     For example, the following file is equivalent to the first scp.
-    
+
         uttid1 cat /some/where/feats.ark:123 |
         uttid2 cat /some/where/feats.ark:156 |
         uttid3 cat /some/where/feats.ark:245 |
@@ -77,15 +77,15 @@ The first column, `uttid1`, indicates the utterance id and the second, `/some/wh
 uttid1 /some/path/a.wav
 uttid2 /some/path/b.wav
 uttid3 /some/path/c.wav
-``` 
+```
 
 `wav.scp` is also can be embeded unix command as normal scp file. This is often used for converting file format in kaldi recipes.
 
 ```
-uttid1 sph2pipe -f wav /some/path/a.wv1 | 
+uttid1 sph2pipe -f wav /some/path/a.wv1 |
 uttid2 sph2pipe -f wav /some/path/b.wv1 |
 uttid3 sph2pipe -f wav /some/path/c.wv1 |
-``` 
+```
 
 ### Features
 Kaldiio supports:
@@ -106,7 +106,7 @@ The followings are **not supported**
 - Lattice file
 
 ### Similar projects
-- Python-C++ binding 
+- Python-C++ binding
    - https://github.com/pykaldi/pykaldi
       - Looks great. I recommend pykaldi if you aren't particular about pure python.
    - https://github.com/janchorowski/kaldi-python/
@@ -119,15 +119,15 @@ The followings are **not supported**
    - https://github.com/funcwj/kaldi-python-io
       - Python>=3.6. `nnet3-egs`is also supported.
 
-## Install 
+## Install
 
 ```bash
 pip install kaldiio
 ```
 
 ## Usage
-`kaldiio` doesn't distinguish the API for each kaldi-objects, i.e. 
-`Kaldi-Matrix`, `Kaldi-Vector`, not depending on whether it is binary or text, or compressed or not, 
+`kaldiio` doesn't distinguish the API for each kaldi-objects, i.e.
+`Kaldi-Matrix`, `Kaldi-Vector`, not depending on whether it is binary or text, or compressed or not,
 can be handled by the same API.
 
 ### ReadHelper
@@ -151,7 +151,7 @@ from kaldiio import ReadHelper
 with ReadHelper('ark: gunzip -c file.ark.gz |') as reader:
     for key, numpy_array in reader:
         ...
-        
+
 # Ali file
 with ReadHelper('ark: gunzip -c exp/tri3_ali/ali.*.gz |') as reader:
     for key, numpy_array in reader:
@@ -251,7 +251,7 @@ import kaldiio
 d = kaldiio.load_ark('a.ark')  # d is a generator object
 for key, numpy_array in d:
     ...
-    
+
 # === load_ark can accepts file descriptor, too
 with open('a.ark') as fd:
     for key, numpy_array in kaldiio.load_ark(fd):
@@ -267,7 +267,7 @@ with open_like_kaldi('gunzip -c file.ark.gz |', 'r') as f:
 - `load_ark` can load both matrices of ark and vectors of ark and also, it can be both text and binary.
 
 ### load_scp
-`load_scp` creates "lazy dict", i.e. 
+`load_scp` creates "lazy dict", i.e.
 The data are loaded in memory when accessing the element.
 
 ```python
@@ -277,10 +277,10 @@ d = kaldiio.load_scp('a.scp')
 for key in d:
     numpy_array = d[key]
 
-    
+
 with open('a.scp') as fd:
     kaldiio.load_scp(fd)
-    
+
 d = kaldiio.load_scp('data/train/wav.scp', segments='data/train/segments')
 for key in d:
     rate, numpy_array = d[key]
@@ -301,8 +301,8 @@ d.get('uttid')
 ### load_scp_sequential (from v2.13.0)
 
 `load_scp_sequential` creates "generator" as same as `load_ark`.
-If you don't need random-accessing for each elements 
-and use it just to iterate for whole data, 
+If you don't need random-accessing for each elements
+and use it just to iterate for whole data,
 then this method possibly performs faster than `load_scp`.
 
 ```python
@@ -317,7 +317,7 @@ for key, numpy_array in d:
 d = kaldiio.load_scp('wav.scp')
 for key in d:
     rate, numpy_array = d[key]
-    
+
 # Supporting "segments"
 d = kaldiio.load_scp('data/train/wav.scp', segments='data/train/segments')
 for key in d:
@@ -332,7 +332,7 @@ numpy_array = kaldiio.load_mat('a.mat')
 numpy_array = kaldiio.load_mat('a.ark:1134')  # Seek and load
 
 # If the file is wav, gets Tuple[int, numpy.ndarray]
-rate, numpy_array = kaldiio.load_mat('a.wav') 
+rate, numpy_array = kaldiio.load_mat('a.wav')
 ```
 - `load_mat` can load kaldi-matrix, kaldi-vector, and wave
 
