@@ -16,7 +16,7 @@ from kaldiio.utils import LazyLoader
 from kaldiio.utils import MultiFileDescriptor
 from kaldiio.utils import open_like_kaldi
 from kaldiio.utils import open_or_fd
-from kaldiio.utils import py2_default_encoding
+from kaldiio.utils import default_encoding
 from kaldiio.utils import seekable
 from kaldiio.wavio import read_wav
 from kaldiio.wavio import write_wav
@@ -303,10 +303,7 @@ def read_token(fd):
         token.append(c)
     if len(token) == 0:  # End of file
         return None
-    if PY3:
-        decoded = b''.join(token).decode()
-    else:
-        decoded = b''.join(token).decode(py2_default_encoding)
+    decoded = b''.join(token).decode(encoding=default_encoding)
     return decoded
 
 
@@ -470,10 +467,7 @@ def read_ascii_mat(fd, return_size=False):
     while True:
         b = fd.read(1)
         try:
-            if PY3:
-                char = b.decode()
-            else:
-                char = b.decode(py2_default_encoding)
+            char = b.decode(encoding=default_encoding)
         except UnicodeDecodeError:
             raise ValueError('File format is wrong?')
         size += 1
@@ -490,17 +484,11 @@ def read_ascii_mat(fd, return_size=False):
     # Read data
     ndmin = 1
     while True:
-        if PY3:
-            char = fd.read(1).decode()
-        else:
-            char = fd.read(1).decode(py2_default_encoding)
+        char = fd.read(1).decode(encoding=default_encoding)
         size += 1
         if hasparent:
             if char == ']':
-                if PY3:
-                    char = fd.read(1).decode()
-                else:
-                    char = fd.read(1).decode(py2_default_encoding)
+                char = fd.read(1).decode(encoding=default_encoding)
                 size += 1
                 assert char == '\n' or char == ''
                 break
@@ -583,10 +571,7 @@ def save_ark(ark, array_dict, scp=None, append=False, text=False,
             offset = 0
         size = 0
         for key in array_dict:
-            if PY3:
-                encode_key = (key + ' ').encode()
-            else:
-                encode_key = (key + ' ').encode(py2_default_encoding)
+            encode_key = (key + ' ').encode(encoding=default_encoding)
             fd.write(encode_key)
             size += len(encode_key)
             pos_list.append(size)
@@ -735,10 +720,7 @@ def write_array_ascii(fd, array, digit='.12g'):
             size += 3
             for i in row:
                 string = format(i, digit)
-                if PY3:
-                    fd.write(string.encode())
-                else:
-                    fd.write(string.encode(py2_default_encoding))
+                fd.write(string.encode(encoding=default_encoding))
                 fd.write(b' ')
                 size += len(string) + 1
         fd.write(b']\n')
@@ -748,10 +730,7 @@ def write_array_ascii(fd, array, digit='.12g'):
         size += 1
         for i in array:
             string = format(i, digit)
-            if PY3:
-                fd.write(string.encode())
-            else:
-                fd.write(string.encode(py2_default_encoding))
+            fd.write(string.encode(encoding=default_encoding))
             fd.write(b' ')
             size += len(string) + 1
         fd.write(b']\n')
