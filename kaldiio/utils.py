@@ -20,6 +20,37 @@ else:
 default_encoding = 'utf-8'
 
 
+"""
+"utf-8" is used not depending on the environements variable,
+e.g. LC_ALL, PYTHONIOENCODING, or PYTHONUTF8.
+
+# Note: About the encoding of Python
+- filesystem encoding
+
+sys.getfilesystemencoding().
+Used for file path and command line arguments.
+The default value depends on the local in your unix system.
+If Python>=3.7,
+
+- preferred encoding
+
+locale.getpreferredencoding(). Used for open().
+The default value depends on the local in your unix system.
+
+- stdout and stdin
+
+If PYTHONIOENCODING is set, then it's used,
+else if in a terminal, same as filesystem encoding
+else same as preferred encoding
+
+- default encoding
+
+The default encoding for str.encode() or bytes.decode().
+If Python2, it's ascii, if Python3, it's utf-8.
+
+"""
+
+
 if PY3:
     def my_popen(cmd, mode='r', buffering=-1):
         """Originated from python os module
@@ -37,25 +68,29 @@ if PY3:
         if buffering == 0 or buffering is None:
             raise ValueError('popen() does not support unbuffered streams')
         if mode == 'r':
-            proc = subprocess.Popen(cmd,
+            proc = subprocess.Popen(cmd.encode(default_encoding),
                                     shell=True,
                                     stdout=subprocess.PIPE,
                                     bufsize=buffering)
-            return _wrap_close(io.TextIOWrapper(proc.stdout), proc)
+            return _wrap_close(io.TextIOWrapper(proc.stdout,
+                                                encoding=default_encoding),
+                               proc)
         elif mode == 'rb':
-            proc = subprocess.Popen(cmd,
+            proc = subprocess.Popen(cmd.encode(default_encoding),
                                     shell=True,
                                     stdout=subprocess.PIPE,
                                     bufsize=buffering)
             return _wrap_close(proc.stdout, proc)
         elif mode == 'w':
-            proc = subprocess.Popen(cmd,
+            proc = subprocess.Popen(cmd.encode(default_encoding),
                                     shell=True,
                                     stdin=subprocess.PIPE,
                                     bufsize=buffering)
-            return _wrap_close(io.TextIOWrapper(proc.stdin), proc)
+            return _wrap_close(io.TextIOWrapper(proc.stdin,
+                                                encoding=default_encoding),
+                               proc)
         elif mode == 'wb':
-            proc = subprocess.Popen(cmd,
+            proc = subprocess.Popen(cmd.encode(default_encoding),
                                     shell=True,
                                     stdin=subprocess.PIPE,
                                     bufsize=buffering)
@@ -134,22 +169,37 @@ def open_like_kaldi(name, mode='r'):
         else:
             return name
 
+    # If writting to stdout
     if name.strip()[-1] == '|':
         return my_popen(name.strip()[:-1], mode)
+    # If reading from stdin
     elif name.strip()[0] == '|':
         return my_popen(name.strip()[1:], mode)
+    # If read mode
     elif name == '-' and 'r' in mode:
-        if mode == 'rb' and PY3:
-            return _stdstream_wrap(sys.stdin.buffer)
+        if PY3:
+            if mode == 'rb':
+                return _stdstream_wrap(sys.stdin.buffer)
+            else:
+                return _stdstream_wrap(
+                    io.TextIOWrapper(sys.stdin.buffer,
+                                     encoding=default_encoding))
         else:
             return _stdstream_wrap(sys.stdin)
+    # If write mode
     elif name == '-' and ('w' in mode or 'a' in mode):
-        if (mode == 'wb' or mode == 'ab') and PY3:
-            return _stdstream_wrap(sys.stdout.buffer)
+        if PY3:
+            if (mode == 'wb' or mode == 'ab'):
+                return _stdstream_wrap(sys.stdout.buffer)
+            else:
+                return _stdstream_wrap(
+                    io.TextIOWrapper(sys.stdout.buffer,
+                                     encoding=default_encoding))
         else:
             return _stdstream_wrap(sys.stdout)
     else:
-        return io.open(name, mode)
+        encoding = None if 'b' in mode else default_encoding
+        return io.open(name, mode, encoding=encoding)
 
 
 @contextmanager
@@ -157,10 +207,7 @@ def open_or_fd(fname, mode):
     # If fname is a file name
     if isinstance(fname, string_types):
         encoding = None if 'b' in mode else default_encoding
-        if PY3:
-            f = open(fname, mode, encoding=encoding)
-        else:
-            f = io.open(fname, mode, encoding=encoding)
+        f = open(fname, mode, encoding=encoding)
     # If fname is a file descriptor
     else:
         if PY3 and 'b' in mode and isinstance(fname, TextIOBase):
