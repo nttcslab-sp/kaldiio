@@ -1,24 +1,25 @@
+# coding: utf-8
+from __future__ import unicode_literals
+
+import io
 import sys
 
 from kaldiio.utils import open_like_kaldi
 
+PY3 = sys.version_info[0] == 3
+
 
 def test_open_like_kaldi(tmpdir):
-    with open_like_kaldi('echo hello |', 'r') as f:
-        assert f.read() == 'hello\n'
+    with open_like_kaldi('echo あああ |', 'r') as f:
+        if PY3:
+            assert f.read() == 'あああ\n'
+        else:
+            assert f.read().decode('utf-8') == 'あああ\n'
     txt = tmpdir.mkdir('test').join('out.txt').strpath
     with open_like_kaldi('| cat > {}'.format(txt), 'w') as f:
-        f.write('hello')
-    with open(txt, 'r') as f:
-        assert f.read() == 'hello'
-
-
-def test_open_stdsteadm():
-    with open_like_kaldi('-', 'w') as f:
-        assert f is sys.stdout
-    with open_like_kaldi('-', 'wb'):
-        pass
-    with open_like_kaldi('-', 'r') as f:
-        assert f is sys.stdin
-    with open_like_kaldi('-', 'rb'):
-        pass
+        if PY3:
+            f.write('あああ')
+        else:
+            f.write('あああ'.encode('utf-8'))
+    with io.open(txt, 'r', encoding='utf-8') as f:
+        assert f.read() == 'あああ'

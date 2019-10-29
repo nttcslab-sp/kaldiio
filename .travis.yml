@@ -9,6 +9,8 @@ install:
 - pip install -e .
 - pip install pycodestyle flake8 codecov
 script:
+# Should perform not depending on the locale
+- export LC_ALL=C
 - python setup.py test
 - pycodestyle kaldiio tests
 - flake8 kaldiio tests
