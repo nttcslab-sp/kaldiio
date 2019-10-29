@@ -13,9 +13,11 @@ PY3 = sys.version_info[0] == 3
 if PY3:
     from collections.abc import MutableMapping
     string_types = str,
+    text_type = str
 else:
     from collections import MutableMapping
     string_types = basestring,  # noqa: F821
+    text_type = unicode  # noqa: F821
 
 default_encoding = 'utf-8'
 
@@ -62,13 +64,12 @@ if PY3:
             mode (str):
             buffering (int):
         """
-        if not isinstance(cmd, str):
-            raise TypeError(
-                'invalid cmd type (%s, expected string)' % type(cmd))
+        if isinstance(cmd, text_type):
+            cmd = cmd.encode(default_encoding)
         if buffering == 0 or buffering is None:
             raise ValueError('popen() does not support unbuffered streams')
         if mode == 'r':
-            proc = subprocess.Popen(cmd.encode(default_encoding),
+            proc = subprocess.Popen(cmd,
                                     shell=True,
                                     stdout=subprocess.PIPE,
                                     bufsize=buffering)
@@ -76,13 +77,13 @@ if PY3:
                                                 encoding=default_encoding),
                                proc)
         elif mode == 'rb':
-            proc = subprocess.Popen(cmd.encode(default_encoding),
+            proc = subprocess.Popen(cmd,
                                     shell=True,
                                     stdout=subprocess.PIPE,
                                     bufsize=buffering)
             return _wrap_close(proc.stdout, proc)
         elif mode == 'w':
-            proc = subprocess.Popen(cmd.encode(default_encoding),
+            proc = subprocess.Popen(cmd,
                                     shell=True,
                                     stdin=subprocess.PIPE,
                                     bufsize=buffering)
@@ -90,7 +91,7 @@ if PY3:
                                                 encoding=default_encoding),
                                proc)
         elif mode == 'wb':
-            proc = subprocess.Popen(cmd.encode(default_encoding),
+            proc = subprocess.Popen(cmd,
                                     shell=True,
                                     stdin=subprocess.PIPE,
                                     bufsize=buffering)
@@ -170,11 +171,13 @@ def open_like_kaldi(name, mode='r'):
             return name
 
     # If writting to stdout
-    if name.strip()[-1] == '|':
-        return my_popen(name.strip()[:-1], mode)
+    if name.strip().endswith('|'):
+        cmd = name.strip()[:-1].encode(default_encoding)
+        return my_popen(cmd, mode)
     # If reading from stdin
-    elif name.strip()[0] == '|':
-        return my_popen(name.strip()[1:], mode)
+    elif name.strip().startswith('|'):
+        cmd = name.strip()[1:].encode(default_encoding)
+        return my_popen(cmd, mode)
     # If read mode
     elif name == '-' and 'r' in mode:
         if PY3:
@@ -207,7 +210,7 @@ def open_or_fd(fname, mode):
     # If fname is a file name
     if isinstance(fname, string_types):
         encoding = None if 'b' in mode else default_encoding
-        f = open(fname, mode, encoding=encoding)
+        f = io.open(fname, mode, encoding=encoding)
     # If fname is a file descriptor
     else:
         if PY3 and 'b' in mode and isinstance(fname, TextIOBase):
