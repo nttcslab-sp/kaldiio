@@ -1,3 +1,4 @@
+# coding: utf-8
 import io
 
 from kaldiio.utils import open_like_kaldi
