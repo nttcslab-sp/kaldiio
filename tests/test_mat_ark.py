@@ -250,8 +250,14 @@ def test_write_read_mat(tmpdir, endian, dtype):
 def test__parse_arkpath():
     assert _parse_arkpath('a.ark') == ('a.ark', None, None)
     assert _parse_arkpath('a.ark:12') == ('a.ark', 12, None)
+    assert _parse_arkpath('a.ark:12[4]') == \
+        ('a.ark', 12, (slice(4, 5, None),))
     assert _parse_arkpath('a.ark:12[3:4]') == \
-        ('a.ark', 12, (slice(3, 4, None),))
+        ('a.ark', 12, (slice(3, 5, None),))
+    assert _parse_arkpath('a.ark:12[3:10:2]') == \
+        ('a.ark', 12, (slice(3, 11, 2),))
+    assert _parse_arkpath('a.ark:12[2:6,3:4]') == \
+        ('a.ark', 12, (slice(2, 7), slice(3, 5, None)))
     assert _parse_arkpath('cat "fo:o.ark" |') == \
         ('cat "fo:o.ark" |', None, None)
 
