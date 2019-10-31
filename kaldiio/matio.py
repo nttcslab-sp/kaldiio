@@ -12,11 +12,11 @@ import numpy as np
 
 from kaldiio.compression_header import GlobalHeader
 from kaldiio.compression_header import PerColHeader
+from kaldiio.utils import default_encoding
 from kaldiio.utils import LazyLoader
 from kaldiio.utils import MultiFileDescriptor
 from kaldiio.utils import open_like_kaldi
 from kaldiio.utils import open_or_fd
-from kaldiio.utils import default_encoding
 from kaldiio.utils import seekable
 from kaldiio.wavio import read_wav
 from kaldiio.wavio import write_wav
@@ -204,7 +204,7 @@ def load_mat(ark_name, endian='<', as_bytes=False):
 
 
 def _parse_arkpath(ark_name):
-    """
+    """Parse arkpath
 
     Args:
         ark_name (str):
@@ -219,7 +219,9 @@ def _parse_arkpath(ark_name):
         'a.ark', 12, (slice(3, 4, None),)
         >>> _parse_arkpath('cat "fo:o.ark" |')
         'cat "fo:o.ark" |', None, None
+
     """
+
     if ark_name.rstrip()[-1] == '|' or ark_name.rstrip()[0] == '|':
         # Something like: "| cat foo" or "cat bar|" shouldn't be parsed
         return ark_name, None, None
@@ -240,18 +242,39 @@ def _parse_arkpath(ark_name):
 
 
 def _convert_to_slice(string):
+    """Convert slice-str to slice
+
+    Examples:
+        >>> _convert_to_slice('0:51')
+        (slice(0, 52),)
+        >>> _convert_to_slice('0:51,6:10')
+        (slice(0, 52), slice(6, 11))
+        >>> _convert_to_slice(',6:10')
+        (slice(None), slice(6, 11))
+
+    """
+
     slices = []
     for ele in string.split(','):
         if ele == '' or ele == ':':
             slices.append(slice(None))
         else:
-            args = []
-            for _ele in ele.split(':'):
-                if _ele == '':
-                    args.append(None)
-                else:
-                    args.append(int(_ele))
-            slices.append(slice(*args))
+            sps = []
+            for sp in ele.split(':'):
+                try:
+                    sps.append(int(sp))
+                except ValueError:
+                    raise ValueError('Format error: {}'.format(string))
+            if len(sps) == 1:
+                sl = slice(sps[0], sps[0] + 1)
+            elif len(sps) == 2:
+                sl = slice(sps[0], sps[1] + 1)
+            elif len(sps) == 3:
+                sl = slice(sps[0], sps[1] + 1, sps[2])
+            else:
+                raise RuntimeError('Too many : {}'.format(string))
+
+            slices.append(sl)
     return tuple(slices)
 
 
