@@ -48,7 +48,7 @@ def load_scp(fname, endian='<', separator=None, as_bytes=False,
     if segments is None:
         load_func = partial(load_mat, endian=endian, as_bytes=as_bytes)
         loader = LazyLoader(load_func)
-        with open_or_fd(fname, 'r') as fd:
+        with open_like_kaldi(fname, 'r') as fd:
             for line in fd:
                 seps = line.split(separator, 1)
                 if len(seps) != 2:
@@ -75,7 +75,7 @@ def load_scp_sequential(fname, endian='<', separator=None, as_bytes=False,
     """
     assert endian in ('<', '>'), endian
     if segments is None:
-        with open_or_fd(fname, 'r') as fd:
+        with open_like_kaldi(fname, 'r') as fd:
             prev_ark = None
             prev_arkfd = None
 
