@@ -150,10 +150,10 @@ class _stdstream_wrap(object):
         pass
 
     def __getattr__(self, name):
-        return getattr(self._stream, name)
+        return getattr(self.fd, name)
 
     def __iter__(self):
-        return iter(self._stream)
+        return iter(self.fd)
 
 
 def open_like_kaldi(name, mode='r'):
