@@ -16,7 +16,7 @@ setup(name='kaldiio',
       packages=['kaldiio'],
       install_requires=['numpy'],
       setup_requires=['pytest-runner'],
-      tests_require=['pytest', 'pytest-cov'],
+      tests_require=['pytest', 'pytest-cov', "soundfile"],
       classifiers=[
             'Development Status :: 5 - Production/Stable',
             'Intended Audience :: Science/Research',
