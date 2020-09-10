@@ -1,20 +1,24 @@
 from __future__ import unicode_literals
 
-from functools import partial
-from io import BytesIO
-from io import StringIO
+import binascii
+import codecs
+import math
+import pickle
 import re
 import struct
 import sys
 import warnings
+from functools import partial
+from io import BytesIO
+from io import StringIO
 
 import numpy as np
 
 from kaldiio.compression_header import GlobalHeader
 from kaldiio.compression_header import PerColHeader
-from kaldiio.utils import default_encoding
 from kaldiio.utils import LazyLoader
 from kaldiio.utils import MultiFileDescriptor
+from kaldiio.utils import default_encoding
 from kaldiio.utils import open_like_kaldi
 from kaldiio.utils import open_or_fd
 from kaldiio.utils import seekable
@@ -27,13 +31,32 @@ if PY3:
     from collections.abc import Mapping
     binary_type = bytes
     string_types = str,
+
+    def to_bytes(n, length, endianess='little'):
+        return n.to_bytes(length, endianess)
+
+    def from_bytes(s, endianess='little'):
+        return int.from_bytes(s, endianess)
+
 else:
     from collections import Mapping
     binary_type = str
     string_types = basestring,  # noqa: F821
 
 
-def load_scp(fname, endian='<', separator=None, as_bytes=False,
+    def to_bytes(n, length, endianess='little'):
+        assert endianess in ("big", "little"), endianess
+        h = b'%x' % n
+        s = codec.decode((b'0' * (len(h) % 2) + h).zfill(length * 2), 'hex')
+        return s if endianess == 'big' else s[::-1]
+
+    def from_bytes(s, endianess='little'):
+        if endianess == "little":
+            s = s[::-1]
+        return int(codecs.encode(s, 'hex'), 16)
+
+
+def load_scp(fname, endian='<', separator=None,
              segments=None):
     """Lazy loader for kaldi scp file.
 
@@ -41,12 +64,11 @@ def load_scp(fname, endian='<', separator=None, as_bytes=False,
         fname (str or file(text mode)):
         endian (str):
         separator (str):
-        as_bytes (bool): Read as raw bytes string
         segments (str): The path of segments
     """
     assert endian in ('<', '>'), endian
     if segments is None:
-        load_func = partial(load_mat, endian=endian, as_bytes=as_bytes)
+        load_func = partial(load_mat, endian=endian)
         loader = LazyLoader(load_func)
         with open_like_kaldi(fname, 'r') as fd:
             for line in fd:
@@ -62,7 +84,7 @@ def load_scp(fname, endian='<', separator=None, as_bytes=False,
                                  segments=segments)
 
 
-def load_scp_sequential(fname, endian='<', separator=None, as_bytes=False,
+def load_scp_sequential(fname, endian='<', separator=None,
                         segments=None):
     """Lazy loader for kaldi scp file.
 
@@ -70,7 +92,6 @@ def load_scp_sequential(fname, endian='<', separator=None, as_bytes=False,
         fname (str or file(text mode)):
         endian (str):
         separator (str):
-        as_bytes (bool): Read as raw bytes string
         segments (str): The path of segments
     """
     assert endian in ('<', '>'), endian
@@ -92,14 +113,12 @@ def load_scp_sequential(fname, endian='<', separator=None, as_bytes=False,
 
                     if prev_ark == ark:
                         arkfd = prev_arkfd
-                        mat = _load_mat(arkfd, offset, slices, endian=endian,
-                                        as_bytes=as_bytes)
+                        mat = _load_mat(arkfd, offset, slices, endian=endian)
                     else:
                         if prev_arkfd is not None:
                             prev_arkfd.close()
                         arkfd = open_like_kaldi(ark, 'rb')
-                        mat = _load_mat(arkfd, offset, slices, endian=endian,
-                                        as_bytes=as_bytes)
+                        mat = _load_mat(arkfd, offset, slices, endian=endian)
 
                     prev_ark = ark
                     prev_arkfd = arkfd
@@ -196,11 +215,11 @@ class SegmentsExtractor(Mapping):
             return rate, array[int(st * rate):]
 
 
-def load_mat(ark_name, endian='<', as_bytes=False):
+def load_mat(ark_name, endian='<'):
     assert endian in ('<', '>'), endian
     ark, offset, slices = _parse_arkpath(ark_name)
     with open_like_kaldi(ark, 'rb') as fd:
-        return _load_mat(fd, offset, slices, endian=endian, as_bytes=as_bytes)
+        return _load_mat(fd, offset, slices, endian=endian)
 
 
 def _parse_arkpath(ark_name):
@@ -278,13 +297,10 @@ def _convert_to_slice(string):
     return tuple(slices)
 
 
-def _load_mat(fd, offset, slices=None, endian='<', as_bytes=False):
+def _load_mat(fd, offset, slices=None, endian='<'):
     if offset is not None:
         fd.seek(offset)
-    if not as_bytes:
-        array = read_kaldi(fd, endian)
-    else:
-        array = fd.read()
+    array = read_kaldi(fd, endian)
 
     if slices is not None:
         if isinstance(array, (tuple, list)):
@@ -294,21 +310,15 @@ def _load_mat(fd, offset, slices=None, endian='<', as_bytes=False):
     return array
 
 
-def load_ark(fname, return_position=False, endian='<'):
+def load_ark(fname, endian='<'):
     assert endian in ('<', '>'), endian
-    size = 0
     with open_or_fd(fname, 'rb') as fd:
         while True:
             token = read_token(fd)
             if token is None:
                 break
-            size += len(token) + 1
-            array, _size = read_kaldi(fd, endian, return_size=True)
-            if return_position:
-                yield token, array, size
-            else:
-                yield token, array
-            size += _size
+            array = read_kaldi(fd, endian)
+            yield token, array
 
 
 def read_token(fd):
@@ -330,40 +340,76 @@ def read_token(fd):
     return decoded
 
 
-def read_kaldi(fd, endian='<', return_size=False):
+def read_kaldi(fd, endian='<', audio_loader="soundfile"):
     """Load kaldi
 
     Args:
         fd (file): Binary mode file object. Cannot input string
         endian (str):
-        return_size (bool):
+        audio_loader: (Union[str, callable]):
     """
     assert endian in ('<', '>'), endian
-    binary_flag = fd.read(4)
+
+    max_flag_length = len(b"AUDIO")
+
+    binary_flag = fd.read(max_flag_length)
     assert isinstance(binary_flag, binary_type), type(binary_flag)
 
     if seekable(fd):
-        fd.seek(-4, 1)
+        fd.seek(-max_flag_length, 1)
     else:
         fd = MultiFileDescriptor(BytesIO(binary_flag), fd)
 
     if binary_flag[:4] == b'RIFF':
         # array: Tuple[int, np.ndarray]
-        array, size = read_wav(fd, return_size=True)
+        array = read_wav(fd)
+
+    elif binary_flag[:3] == b'NPY':
+        fd.read(3)
+        length_ = _read_length_header(fd)
+        buf = fd.read(length_)
+        _fd = BytesIO(buf)
+        array = np.load(_fd)
+
+    elif binary_flag[:3] == b'PKL':
+        fd.read(3)
+        array = pickle.load(fd)
+
+    elif binary_flag[:5] == b'AUDIO':
+        fd.read(5)
+        length_ = _read_length_header(fd)
+        buf = fd.read(length_)
+        _fd = BytesIO(buf)
+
+        if audio_loader == "soundfile":
+            import soundfile
+            audio_loader = soundfile.read
+        else:
+            raise ValueError("Not supported: audio_loader={}".format(audio_loader))
+
+        x1, x2 = audio_loader(_fd)
+
+        # array: Tuple[int, np.ndarray] according to scipy wav read
+        if isinstance(x1, int) and isinstance(x2, np.ndarray):
+            array = (x1, x2)
+        elif isinstance(x1, np.ndarray) and isinstance(x2, int):
+            array = (x2, x1)
+        else:
+            raise RuntimeError(
+                "Got unexpected type from audio_loader: ({}, {})".format(type(x1), type(x2))
+            )
 
     # Load as binary
     elif binary_flag[:2] == b'\0B':
         if binary_flag[2:3] == b'\4':  # This is int32Vector
-            array, size = read_int32vector(fd, endian, return_size=True)
+            array = read_int32vector(fd, endian)
         else:
-            array, size = read_matrix_or_vector(fd, endian, return_size=True)
+            array = read_matrix_or_vector(fd, endian)
     # Load as ascii
     else:
-        array, size = read_ascii_mat(fd, return_size=True)
-    if return_size:
-        return array, size
-    else:
-        return array
+        array = read_ascii_mat(fd)
+
+    return array
 
 
 def read_int32vector(fd, endian='<', return_size=False):
@@ -550,8 +596,22 @@ def read_ascii_mat(fd, return_size=False):
         return array
 
 
+def _read_length_header(fd):
+    bytes_length, = struct.unpack("<B", fd.read(1))
+    length_ = from_bytes(fd.read(bytes_length))
+    return length_
+
+
+def _write_length_header(fd, length_):
+    bit_length = length_.bit_length()
+    bytes_length = math.ceil(bit_length / 8)
+    fd.write(struct.pack("<B", bytes_length))
+    fd.write(to_bytes(length_, bytes_length))
+    return 1 + bytes_length
+
+
 def save_ark(ark, array_dict, scp=None, append=False, text=False,
-             as_bytes=False, endian='<', compression_method=None):
+             endian='<', compression_method=None, write_function=None):
     """Write ark
 
     Args:
@@ -561,10 +621,9 @@ def save_ark(ark, array_dict, scp=None, append=False, text=False,
         append (bool): If True is specified, open the file
             with appendable mode
         text (bool): If True, saving in text ark format.
-        as_bytes (bool): Save the value of the input array_dict as just a
-            bytes string.
         endian (str):
         compression_method (int):
+        write_function: (str):
     """
     if isinstance(ark, string_types):
         seekable = True
@@ -598,20 +657,87 @@ def save_ark(ark, array_dict, scp=None, append=False, text=False,
             fd.write(encode_key)
             size += len(encode_key)
             pos_list.append(size)
-            if as_bytes:
-                byte = bytes(array_dict[key])
-                size += len(byte)
-                fd.write(byte)
-            else:
-                data = array_dict[key]
-                if isinstance(data, (list, tuple)):
-                    rate, array = data
-                    size += write_wav(fd, rate, array)
-                elif text:
-                    size += write_array_ascii(fd, data, endian)
+            data = array_dict[key]
+
+            if write_function is not None:
+                # Ignore case
+                write_function = write_function.lower()
+
+                if write_function.startswith("soundfile"):
+                    import soundfile
+
+                    if "flac" in write_function:
+                        audio_format = "flac"
+                    elif "wav" in write_function:
+                        audio_format = "wav"
+                    else:
+                        audio_format = "wav"
+
+                    def _write_function(fd, data):
+                        if not isinstance(data, (list, tuple)):
+                            raise TypeError("Expected list or tuple type, but got {}".format(type(data)))
+                        elif len(data) != 2:
+                            raise ValueError("Expected length=2, bot got {}".format(len(data)))
+                        _fd = BytesIO()
+
+                        if isinstance(data[0], np.ndarray) and isinstance(data[1], int):
+                            soundfile.write(_fd, data[0], data[1], format=audio_format)
+
+                        elif isinstance(data[1], np.ndarray) and isinstance(data[0], int):
+                            soundfile.write(_fd, data[1], data[0], format=audio_format)
+                        else:
+                            raise ValueError(
+                                "Expected Tuple[int, np.ndarray] or Tuple[np.ndarray, int]: "
+                                "but got Tuple[{}, {}]".format(type(data[0]), type(data[1]))
+                            )
+                        fd.write(b"AUDIO")
+                        buf = _fd.getbuffer()
+                        # Write the information for the length
+                        bytes_length = _write_length_header(fd, len(buf))
+                        fd.write(buf)
+                        return len(buf) + len(b"AUDIO") + bytes_length
+
+                elif write_function == "pickle":
+                    def _write_function(fd, data):
+                        # Note that we don't need size information for pickle!
+
+                        fd.write(b"PKL")
+                        _fd = BytesIO()
+                        pickle.dump(data, _fd)
+                        buf = _fd.getbuffer()
+                        fd.write(buf)
+                        return len(buf) + len("PKL")
+
+                elif write_function == "numpy":
+                    def _write_function(fd, data):
+                        # Write numpy file in BytesIO
+                        _fd = BytesIO()
+                        np.save(_fd, data)
+
+                        fd.write(b"NPY")
+                        buf = _fd.getbuffer()
+
+                        # Write the information for the length
+                        bytes_length = _write_length_header(fd, len(buf))
+
+                        # Write numpy to real file object
+                        fd.write(buf)
+
+                        return len(buf) + len(b"NPY") + bytes_length
+
                 else:
-                    size += write_array(fd, data, endian,
-                                        compression_method)
+                    raise RuntimeError("Not supported: write_function={}".format(write_function))
+
+                size += _write_function(fd, data)
+
+            elif isinstance(data, (list, tuple)):
+                rate, array = data
+                size += write_wav(fd, rate, array)
+            elif text:
+                size += write_array_ascii(fd, data, endian)
+            else:
+                size += write_array(fd, data, endian,
+                                    compression_method)
 
     # Write scp
     mode = 'a' if append else 'w'

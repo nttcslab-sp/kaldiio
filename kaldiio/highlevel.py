@@ -16,11 +16,12 @@ class WriteHelper(object):
     >>> helper('uttid', array)
 
     """
-    def __init__(self, wspecifier, compression_method=None):
+    def __init__(self, wspecifier, compression_method=None, write_function=None):
         self.initialized = False
         self.closed = False
 
         self.compression_method = compression_method
+        self.write_function = write_function
         spec_dict = parse_specifier(wspecifier)
         if spec_dict['scp'] is not None and spec_dict['ark'] is None:
             raise ValueError(
@@ -46,7 +47,7 @@ class WriteHelper(object):
         if self.closed:
             raise RuntimeError('WriteHelper has been already closed')
         save_ark(self.fark, {key: array}, scp=self.fscp, text=self.text,
-                 compression_method=self.compression_method)
+                 compression_method=self.compression_method, write_function=self.write_function)
 
         if self.flush:
             if self.fark is not None:

@@ -295,6 +295,106 @@ class MultiFileDescriptor(object):
                 remain = -1
         return string
 
+    def readline(self, size=-1):
+        remain = size
+        string = None
+        for f in self.fds:
+            if string is None:
+                string = f.readline(remain)
+            else:
+                string += f.readline(remain)
+            if isinstance(string, text_type):
+                if string.endswith("\n"):
+                    break
+            else:
+                if string.endswith(b"\n"):
+                    break
+            remain = size - len(string)
+            if remain == 0:
+                break
+            elif remain < 0:
+                remain = -1
+        return string
+
+
+
+class CountFileDescriptor(object):
+    def __init__(self, f):
+        self.f = f
+        self.position = 0
+
+    def close(self):
+        return self.f.close()
+
+    def closed(self):
+        return self.f.closed()
+
+    def fileno(self):
+        return self.f.flieno()
+
+    def flush(self):
+        return self.f.flush()
+
+    def isatty(self):
+        return self.f.isatty()
+
+    def readbale(self):
+        return self.f.readable()
+
+    def readline(self, size=-1):
+        line = self.f.readline(size)
+        self.position += len(line)
+        return line
+
+    def readlines(self, hint=-1):
+        lines = self.f.readlines(hint)
+        for line in lines:
+            self.position += len(line)
+        return lines
+
+    def seek(self, offset, whence=0):
+        raise RuntimeError("Can't use seek")
+
+    def seekable(self):
+        return False
+
+    def tell(self):
+        return self.f.tell()
+
+    def truncate(self, size=None):
+        return self.f.trauncate(size)
+
+    def writable(self):
+        return self.f.writable()
+
+    def writelines(self, lines):
+        for line in lines:
+            self.position += len(line)
+        return self.f.writelines(lines)
+
+    def __del__(self):
+        return self.__del__()
+
+    def read(self, size=-1):
+        data = self.f.read(size)
+        self.position += len(data)
+        return data
+
+    def readall(self):
+        data = self.f.readall()
+        self.position += len(data)
+        return data
+
+    def readinfo(self, b):
+        nbyte = self.f.readinfo(b)
+        self.position += nbyte
+        return nbyte
+
+    def write(self, b):
+        self.position += b
+        self.write(b)
+
+
 
 def parse_specifier(specifier):
     """A utility to parse "specifier"
