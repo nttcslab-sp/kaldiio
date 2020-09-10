@@ -1,3 +1,4 @@
+from __future__ import division
 from __future__ import unicode_literals
 
 import codecs
@@ -603,7 +604,7 @@ def _read_length_header(fd):
 
 def _write_length_header(fd, length_):
     bit_length = length_.bit_length()
-    bytes_length = math.ceil(bit_length / 8)
+    bytes_length = int(math.ceil(bit_length / 8))
     fd.write(struct.pack("<B", bytes_length))
     fd.write(to_bytes(length_, bytes_length))
     return 1 + bytes_length
@@ -711,7 +712,7 @@ def save_ark(
                                 )
                             )
                         fd.write(b"AUDIO")
-                        buf = _fd.getbuffer()
+                        buf = _fd.getvalue()
                         # Write the information for the length
                         bytes_length = _write_length_header(fd, len(buf))
                         fd.write(buf)
@@ -725,7 +726,7 @@ def save_ark(
                         fd.write(b"PKL")
                         _fd = BytesIO()
                         pickle.dump(data, _fd)
-                        buf = _fd.getbuffer()
+                        buf = _fd.getvalue()
                         fd.write(buf)
                         return len(buf) + len("PKL")
 
@@ -737,7 +738,7 @@ def save_ark(
                         np.save(_fd, data)
 
                         fd.write(b"NPY")
-                        buf = _fd.getbuffer()
+                        buf = _fd.getvalue()
 
                         # Write the information for the length
                         bytes_length = _write_length_header(fd, len(buf))

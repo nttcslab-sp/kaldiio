@@ -17,10 +17,12 @@ def test_read_write(tmpdir, func, dtype, write_function):
     scp = path.join("a.scp").strpath
 
     # Write as pcm16
-    array = np.random.randint(-1000, 1000, 100).astype(np.double) / abs(
+    array = np.random.randint(-1000, 1000, 100).astype(np.double) / float(
+        abs(np.iinfo(np.int16).min)
+    )
+    array2 = np.random.randint(-1000, 1000, 100).astype(np.double) / abs(
         np.iinfo(np.int16).min
     )
-    array2 = np.random.randint(-1000, 1000, 100) / abs(np.iinfo(np.int16).min)
 
     if write_function == "numpy":
         d = {"utt": array, "utt2": array2}
@@ -69,7 +71,9 @@ def test_wavark_stream(tmpdir, dtype, write_function):
     array = np.random.randint(-1000, 1000, 100).astype(np.double) / abs(
         np.iinfo(np.int16).min
     )
-    array2 = np.random.randint(-1000, 1000, 100) / abs(np.iinfo(np.int16).min)
+    array2 = np.random.randint(-1000, 1000, 100).astype(np.double) / abs(
+        np.iinfo(np.int16).min
+    )
     if write_function == "numpy":
         d = {"utt": array, "utt2": array2}
     else:
