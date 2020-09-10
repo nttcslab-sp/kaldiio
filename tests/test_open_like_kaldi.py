@@ -10,16 +10,16 @@ PY3 = sys.version_info[0] == 3
 
 
 def test_open_like_kaldi(tmpdir):
-    with open_like_kaldi('echo あああ |', 'r') as f:
+    with open_like_kaldi("echo あああ |", "r") as f:
         if PY3:
-            assert f.read() == 'あああ\n'
+            assert f.read() == "あああ\n"
         else:
-            assert f.read().decode('utf-8') == 'あああ\n'
-    txt = tmpdir.mkdir('test').join('out.txt').strpath
-    with open_like_kaldi('| cat > {}'.format(txt), 'w') as f:
+            assert f.read().decode("utf-8") == "あああ\n"
+    txt = tmpdir.mkdir("test").join("out.txt").strpath
+    with open_like_kaldi("| cat > {}".format(txt), "w") as f:
         if PY3:
-            f.write('あああ')
+            f.write("あああ")
         else:
-            f.write('あああ'.encode('utf-8'))
-    with io.open(txt, 'r', encoding='utf-8') as f:
-        assert f.read() == 'あああ'
+            f.write("あああ".encode("utf-8"))
+    with io.open(txt, "r", encoding="utf-8") as f:
+        assert f.read() == "あああ"
