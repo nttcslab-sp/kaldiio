@@ -1,6 +1,5 @@
 from __future__ import unicode_literals
 
-import binascii
 import codecs
 import math
 import pickle
@@ -49,7 +48,7 @@ else:
     def to_bytes(n, length, endianess="little"):
         assert endianess in ("big", "little"), endianess
         h = b"%x" % n
-        s = codec.decode((b"0" * (len(h) % 2) + h).zfill(length * 2), "hex")
+        s = codecs.decode((b"0" * (len(h) % 2) + h).zfill(length * 2), "hex")
         return s if endianess == "big" else s[::-1]
 
     def from_bytes(s, endianess="little"):
@@ -155,10 +154,10 @@ class SegmentsExtractor(Mapping):
         self.segments = segments
         self._segments_dict = {}
         with open_or_fd(self.segments, "r") as f:
-            for l in f:
-                sps = l.rstrip().split(separator)
+            for line in f:
+                sps = line.rstrip().split(separator)
                 if len(sps) != 4:
-                    raise RuntimeError("Format is invalid: {}".format(l))
+                    raise RuntimeError("Format is invalid: {}".format(line))
                 uttid, recodeid, st, et = sps
                 self._segments_dict[uttid] = (recodeid, float(st), float(et))
 
@@ -705,7 +704,8 @@ def save_ark(
                             soundfile.write(_fd, data[1], data[0], format=audio_format)
                         else:
                             raise ValueError(
-                                "Expected Tuple[int, np.ndarray] or Tuple[np.ndarray, int]: "
+                                "Expected Tuple[int, np.ndarray] or "
+                                "Tuple[np.ndarray, int]: "
                                 "but got Tuple[{}, {}]".format(
                                     type(data[0]), type(data[1])
                                 )

@@ -452,7 +452,7 @@ def parse_specifier(specifier):
     }
     for t in types:
         if t not in spec_dict:
-            raise ValueError("Unknown option {}()".format(t, types))
+            raise ValueError("Unknown option {}({})".format(t, types))
         if t in ("scp", "ark"):
             if spec_dict[t] is not None:
                 raise ValueError("You specified {} twice".format(t))

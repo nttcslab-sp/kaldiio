@@ -25,7 +25,7 @@ def test_read_arks(fname):
 
 
 @pytest.mark.parametrize(
-    "shape1,shape2", [[(1000, 120), (10, 120)], [(0, 0), (0, 120)], [(100,), (120,)],]
+    "shape1,shape2", [[(1000, 120), (10, 120)], [(0, 0), (0, 120)], [(100,), (120,)]]
 )
 @pytest.mark.parametrize("endian", ["<", ">"])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
