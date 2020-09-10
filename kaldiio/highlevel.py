@@ -16,37 +16,46 @@ class WriteHelper(object):
     >>> helper('uttid', array)
 
     """
-    def __init__(self, wspecifier, compression_method=None):
+
+    def __init__(self, wspecifier, compression_method=None, write_function=None):
         self.initialized = False
         self.closed = False
 
         self.compression_method = compression_method
+        self.write_function = write_function
         spec_dict = parse_specifier(wspecifier)
-        if spec_dict['scp'] is not None and spec_dict['ark'] is None:
+        if spec_dict["scp"] is not None and spec_dict["ark"] is None:
             raise ValueError(
-                'Writing only in a scp file is not supported. '
-                'Please specify a ark file with a scp file.')
+                "Writing only in a scp file is not supported. "
+                "Please specify a ark file with a scp file."
+            )
         for k in spec_dict:
-            if spec_dict[k] and k not in ('scp', 'ark', 't', 'f'):
+            if spec_dict[k] and k not in ("scp", "ark", "t", "f"):
                 warnings.warn(
-                    '{} option is given, but currently it never affects'
-                    .format(k))
+                    "{} option is given, but currently it never affects".format(k)
+                )
 
-        self.text = spec_dict['t']
-        self.flush = spec_dict['f']
-        ark_file = spec_dict['ark']
-        self.fark = open_like_kaldi(ark_file, 'wb')
-        if spec_dict['scp'] is not None:
-            self.fscp = open_like_kaldi(spec_dict['scp'], 'w')
+        self.text = spec_dict["t"]
+        self.flush = spec_dict["f"]
+        ark_file = spec_dict["ark"]
+        self.fark = open_like_kaldi(ark_file, "wb")
+        if spec_dict["scp"] is not None:
+            self.fscp = open_like_kaldi(spec_dict["scp"], "w")
         else:
             self.fscp = None
         self.initialized = True
 
     def __call__(self, key, array):
         if self.closed:
-            raise RuntimeError('WriteHelper has been already closed')
-        save_ark(self.fark, {key: array}, scp=self.fscp, text=self.text,
-                 compression_method=self.compression_method)
+            raise RuntimeError("WriteHelper has been already closed")
+        save_ark(
+            self.fark,
+            {key: array},
+            scp=self.fscp,
+            text=self.text,
+            compression_method=self.compression_method,
+            write_function=self.write_function,
+        )
 
         if self.flush:
             if self.fark is not None:
@@ -87,6 +96,7 @@ class ReadHelper(object):
     ...     numpy.testing.assert_array_equal(array_in, array_out)
 
     """
+
     def __init__(self, wspecifier, segments=None):
         self.initialized = False
         self.scp = None
@@ -95,30 +105,28 @@ class ReadHelper(object):
         self.segments = segments
 
         spec_dict = parse_specifier(wspecifier)
-        if spec_dict['scp'] is not None and spec_dict['ark'] is not None:
-            raise RuntimeError('Specify one of scp or ark in rspecifier')
+        if spec_dict["scp"] is not None and spec_dict["ark"] is not None:
+            raise RuntimeError("Specify one of scp or ark in rspecifier")
         for k in spec_dict:
-            if spec_dict[k] and k not in ('scp', 'ark', 'p'):
+            if spec_dict[k] and k not in ("scp", "ark", "p"):
                 warnings.warn(
-                    '{} option is given, but currently it never affects'
-                    .format(k))
-        self.permissive = spec_dict['p']
+                    "{} option is given, but currently it never affects".format(k)
+                )
+        self.permissive = spec_dict["p"]
 
-        if spec_dict['scp'] is not None:
-            self.scp = spec_dict['scp']
+        if spec_dict["scp"] is not None:
+            self.scp = spec_dict["scp"]
         else:
             self.scp = False
 
         if self.scp:
-            self.generator = load_scp_sequential(
-                spec_dict['scp'], segments=segments)
+            self.generator = load_scp_sequential(spec_dict["scp"], segments=segments)
 
             self.file = None
         else:
             if segments is not None:
-                raise ValueError(
-                    'Not supporting "segments" argument with ark file')
-            self.file = open_like_kaldi(spec_dict['ark'], 'rb')
+                raise ValueError('Not supporting "segments" argument with ark file')
+            self.file = open_like_kaldi(spec_dict["ark"], "rb")
         self.initialized = True
 
     def __iter__(self):

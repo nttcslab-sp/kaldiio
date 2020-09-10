@@ -14,7 +14,7 @@ from kaldiio.utils import open_like_kaldi
 from kaldiio.utils import parse_specifier
 
 try:
-    __version__ = pkg_resources.get_distribution('kaldiio').version
+    __version__ = pkg_resources.get_distribution("kaldiio").version
 except Exception:
     __version__ = None
 del pkg_resources

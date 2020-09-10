@@ -11,84 +11,84 @@ from kaldiio.wavio import write_wav
 def test_read_helper(tmpdir):
     path = tmpdir.strpath
     array_in = numpy.random.randn(10, 10)
-    save_ark('{}/feats.ark'.format(path),
-             {'foo': array_in}, scp='{}/feats.scp'.format(path))
-    helper = ReadHelper('ark:cat {}/feats.ark |'.format(path))
+    save_ark(
+        "{}/feats.ark".format(path), {"foo": array_in}, scp="{}/feats.scp".format(path)
+    )
+    helper = ReadHelper("ark:cat {}/feats.ark |".format(path))
     for uttid, array_out in helper:
-        assert uttid == 'foo'
+        assert uttid == "foo"
         numpy.testing.assert_array_equal(array_in, array_out)
 
-    helper = ReadHelper('scp:{}/feats.scp'.format(path))
+    helper = ReadHelper("scp:{}/feats.scp".format(path))
     for uttid, array_out in helper:
-        assert uttid == 'foo'
+        assert uttid == "foo"
         numpy.testing.assert_array_equal(array_in, array_out)
 
 
 def test_read_helper_ascii(tmpdir):
     path = tmpdir.strpath
     array_in = numpy.random.randn(10, 10)
-    save_ark('{}/feats.ark'.format(path),
-             {'foo': array_in}, scp='{}/feats.scp'.format(path),
-             text=True)
-    helper = ReadHelper('ark:cat {}/feats.ark |'.format(path))
+    save_ark(
+        "{}/feats.ark".format(path),
+        {"foo": array_in},
+        scp="{}/feats.scp".format(path),
+        text=True,
+    )
+    helper = ReadHelper("ark:cat {}/feats.ark |".format(path))
     for uttid, array_out in helper:
-        assert uttid == 'foo'
+        assert uttid == "foo"
         numpy.testing.assert_allclose(array_in, array_out)
 
-    helper = ReadHelper('ark:{}/feats.ark'.format(path))
+    helper = ReadHelper("ark:{}/feats.ark".format(path))
     for uttid, array_out in helper:
-        assert uttid == 'foo'
+        assert uttid == "foo"
         numpy.testing.assert_allclose(array_in, array_out)
 
 
 def test_write_helper(tmpdir):
     path = tmpdir.strpath
-    d = {'foo': numpy.random.randn(10, 10),
-         'bar': numpy.random.randn(10, 10)}
+    d = {"foo": numpy.random.randn(10, 10), "bar": numpy.random.randn(10, 10)}
 
-    with WriteHelper('ark,f,scp:{p}/out.ark,{p}/out.scp'.format(p=path)) as w:
+    with WriteHelper("ark,f,scp:{p}/out.ark,{p}/out.scp".format(p=path)) as w:
         for k, v in d.items():
             w(k, v)
-    from_ark = dict(load_ark('{p}/out.ark'.format(p=path)))
-    from_scp = load_scp('{p}/out.scp'.format(p=path))
+    from_ark = dict(load_ark("{p}/out.ark".format(p=path)))
+    from_scp = load_scp("{p}/out.scp".format(p=path))
     _compare(from_ark, d)
     _compare(from_scp, d)
 
 
 def test_write_helper_scp_ark(tmpdir):
     path = tmpdir.strpath
-    d = {'foo': numpy.random.randn(10, 10),
-         'bar': numpy.random.randn(10, 10)}
+    d = {"foo": numpy.random.randn(10, 10), "bar": numpy.random.randn(10, 10)}
 
-    with WriteHelper('scp,f,ark:{p}/out.scp,{p}/out.ark'.format(p=path)) as w:
+    with WriteHelper("scp,f,ark:{p}/out.scp,{p}/out.ark".format(p=path)) as w:
         for k, v in d.items():
             w(k, v)
-    from_ark = dict(load_ark('{p}/out.ark'.format(p=path)))
-    from_scp = load_scp('{p}/out.scp'.format(p=path))
+    from_ark = dict(load_ark("{p}/out.ark".format(p=path)))
+    from_scp = load_scp("{p}/out.scp".format(p=path))
     _compare(from_ark, d)
     _compare(from_scp, d)
 
 
 def test_write_helper_ascii(tmpdir):
     path = tmpdir.strpath
-    d = {'foo': numpy.random.randn(10, 10),
-         'bar': numpy.random.randn(10, 10)}
+    d = {"foo": numpy.random.randn(10, 10), "bar": numpy.random.randn(10, 10)}
 
-    with WriteHelper('ark,t,f,scp:{p}/out.ark,{p}/out.scp'
-                     .format(p=path)) as w:
+    with WriteHelper("ark,t,f,scp:{p}/out.ark,{p}/out.scp".format(p=path)) as w:
         for k, v in d.items():
             w(k, v)
-    from_ark = dict(load_ark('{p}/out.ark'.format(p=path)))
-    from_scp = load_scp('{p}/out.scp'.format(p=path))
+    from_ark = dict(load_ark("{p}/out.ark".format(p=path)))
+    from_scp = load_scp("{p}/out.scp".format(p=path))
     _compare_allclose(from_ark, d)
     _compare_allclose(from_scp, d)
 
 
 def test_scpwav_stream(tmpdir):
-    path = tmpdir.mkdir('test')
-    wav = path.join('aaa.wav').strpath
-    wav2 = path.join('bbb.wav').strpath
-    scp = path.join('wav.scp').strpath
+    path = tmpdir.mkdir("test")
+    wav = path.join("aaa.wav").strpath
+    wav2 = path.join("bbb.wav").strpath
+    scp = path.join("wav.scp").strpath
 
     # Write as pcm16
     array = numpy.random.randint(0, 10, 10, dtype=numpy.int16)
@@ -97,13 +97,13 @@ def test_scpwav_stream(tmpdir):
     array2 = numpy.random.randint(0, 10, 10, dtype=numpy.int16)
     write_wav(wav2, 8000, array2)
 
-    valid = {'aaa': array, 'bbb': array2}
+    valid = {"aaa": array, "bbb": array2}
 
-    with open(scp, 'w') as f:
-        f.write('aaa cat {wav} |\n'.format(wav=wav))
-        f.write('bbb cat {wav} |\n'.format(wav=wav2))
+    with open(scp, "w") as f:
+        f.write("aaa cat {wav} |\n".format(wav=wav))
+        f.write("bbb cat {wav} |\n".format(wav=wav2))
 
-    with ReadHelper('scp:{}'.format(scp)) as r:
+    with ReadHelper("scp:{}".format(scp)) as r:
         for k, (rate, array) in r:
             assert rate == 8000
             numpy.testing.assert_array_equal(array, valid[k])
@@ -111,40 +111,44 @@ def test_scpwav_stream(tmpdir):
 
 def test_segments(tmpdir):
     # Create wav.scp
-    path = tmpdir.mkdir('test')
-    wavscp = path.join('wav.scp').strpath
+    path = tmpdir.mkdir("test")
+    wavscp = path.join("wav.scp").strpath
 
     rate = 500
-    with open(wavscp, 'w') as f:
-        wav = path.join('0.wav').strpath
+    with open(wavscp, "w") as f:
+        wav = path.join("0.wav").strpath
         array0 = numpy.random.randint(0, 10, 2000, dtype=numpy.int16)
         write_wav(wav, rate, array0)
-        f.write('wav0 {}\n'.format(wav))
+        f.write("wav0 {}\n".format(wav))
 
-        wav = path.join('1.wav').strpath
+        wav = path.join("1.wav").strpath
         array1 = numpy.random.randint(0, 10, 2000, dtype=numpy.int16)
         write_wav(wav, rate, array1)
-        f.write('wav1 {}\n'.format(wav))
+        f.write("wav1 {}\n".format(wav))
 
     # Create segments
-    segments = path.join('segments').strpath
-    with open(segments, 'w') as f:
-        f.write('utt1 wav0 0.1 0.2\n')
-        f.write('utt2 wav0 0.4 0.6\n')
-        f.write('utt3 wav1 0.4 0.5\n')
-        f.write('utt4 wav1 0.6 0.8\n')
+    segments = path.join("segments").strpath
+    with open(segments, "w") as f:
+        f.write("utt1 wav0 0.1 0.2\n")
+        f.write("utt2 wav0 0.4 0.6\n")
+        f.write("utt3 wav1 0.4 0.5\n")
+        f.write("utt4 wav1 0.6 0.8\n")
 
-    with ReadHelper('scp:{}'.format(wavscp), segments=segments) as r:
+    with ReadHelper("scp:{}".format(wavscp), segments=segments) as r:
         d = {k: a for k, a in r}
 
         numpy.testing.assert_array_equal(
-            d['utt1'][1], array0[int(0.1 * rate):int(0.2 * rate)])
+            d["utt1"][1], array0[int(0.1 * rate) : int(0.2 * rate)]
+        )
         numpy.testing.assert_array_equal(
-            d['utt2'][1], array0[int(0.4 * rate):int(0.6 * rate)])
+            d["utt2"][1], array0[int(0.4 * rate) : int(0.6 * rate)]
+        )
         numpy.testing.assert_array_equal(
-            d['utt3'][1], array1[int(0.4 * rate):int(0.5 * rate)])
+            d["utt3"][1], array1[int(0.4 * rate) : int(0.5 * rate)]
+        )
         numpy.testing.assert_array_equal(
-            d['utt4'][1], array1[int(0.6 * rate):int(0.8 * rate)])
+            d["utt4"][1], array1[int(0.6 * rate) : int(0.8 * rate)]
+        )
 
 
 def _compare(d1, d2):
@@ -154,7 +158,7 @@ def _compare(d1, d2):
         numpy.testing.assert_array_equal(d1[key], d2[key])
 
 
-def _compare_allclose(d1, d2, rtol=1e-07, atol=0.):
+def _compare_allclose(d1, d2, rtol=1e-07, atol=0.0):
     assert len(d1) != 0
     assert set(d1.keys()) == set(d2.keys())
     for key in d1:

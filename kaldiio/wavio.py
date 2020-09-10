@@ -12,11 +12,11 @@ def read_wav(fd, return_size=False):
     nbytes = wd.getsampwidth()
     if nbytes == 1:
         # 8bit-PCM is unsigned
-        dtype = 'uint8'
+        dtype = "uint8"
     elif nbytes == 2:
-        dtype = 'int16'
+        dtype = "int16"
     else:
-        raise ValueError('bytes_per_sample must be 1, 2, 4 or 8')
+        raise ValueError("bytes_per_sample must be 1, 2, 4 or 8")
     data = wd.readframes(wd.getnframes())
     size = 44 + len(data)
     array = np.frombuffer(data, dtype=np.dtype(dtype))
@@ -35,7 +35,7 @@ def write_wav(fd, rate, array):
     elif array.dtype == np.int16:
         sampwidth = 2
     else:
-        raise ValueError('Not Supported dtype {}'.format(array.dtype))
+        raise ValueError("Not Supported dtype {}".format(array.dtype))
 
     if array.ndim == 2:
         nchannels = array.shape[1]
@@ -43,7 +43,8 @@ def write_wav(fd, rate, array):
         nchannels = 1
     else:
         raise ValueError(
-            'Not Supported dimension: 0 or 1, but got {}'.format(array.ndim))
+            "Not Supported dimension: 0 or 1, but got {}".format(array.ndim)
+        )
 
     w = wave.Wave_write(fd)
     w.setnchannels(nchannels)
