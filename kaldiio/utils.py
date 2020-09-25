@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+from collections import OrderedDict
 from contextlib import contextmanager
 import io
 from io import TextIOBase
@@ -515,9 +516,9 @@ def seekable(f):
 
 
 class LimitedSizeDict(MutableMapping):
-    def __init__(self, maxsize: int):
+    def __init__(self, maxsize):
         self._maxsize = maxsize
-        self.data = {}
+        self.data = OrderedDict()
 
     def __repr__(self):
         return repr(self.data)
