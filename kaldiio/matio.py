@@ -17,6 +17,7 @@ import numpy as np
 from kaldiio.compression_header import GlobalHeader
 from kaldiio.compression_header import PerColHeader
 from kaldiio.utils import LazyLoader
+from kaldiio.utils import LimitedSizeDict
 from kaldiio.utils import MultiFileDescriptor
 from kaldiio.utils import default_encoding
 from kaldiio.utils import open_like_kaldi
@@ -58,7 +59,7 @@ else:
         return int(codecs.encode(s, "hex"), 16)
 
 
-def load_scp(fname, endian="<", separator=None, segments=None):
+def load_scp(fname, endian="<", separator=None, segments=None, max_cache_fd=0):
     """Lazy loader for kaldi scp file.
 
     Args:
@@ -68,8 +69,16 @@ def load_scp(fname, endian="<", separator=None, segments=None):
         segments (str): The path of segments
     """
     assert endian in ("<", ">"), endian
+
+    if max_cache_fd != 0:
+        if segments is not None:
+            raise ValueError("max_cache_fd is not supported for segments mode")
+        d = LimitedSizeDict(max_cache_fd)
+    else:
+        d = None
+
     if segments is None:
-        load_func = partial(load_mat, endian=endian)
+        load_func = partial(load_mat, endian=endian, fd_dict=d)
         loader = LazyLoader(load_func)
         with open_like_kaldi(fname, "r") as fd:
             for line in fd:
@@ -213,11 +222,23 @@ class SegmentsExtractor(Mapping):
             return rate, array[int(st * rate) :]
 
 
-def load_mat(ark_name, endian="<"):
+def load_mat(ark_name, endian="<", fd_dict=None):
     assert endian in ("<", ">"), endian
+    if fd_dict is not None and not isinstance(fd_dict, Mapping):
+        raise RuntimeError(
+            "fd_dict must be dict or None, bot got {}".format(type(fd_dict))
+        )
+
     ark, offset, slices = _parse_arkpath(ark_name)
-    with open_like_kaldi(ark, "rb") as fd:
+
+    if fd_dict is not None and not (ark.strip()[-1] == "|" or ark.strip()[0] == "|"):
+        if ark not in fd_dict:
+            fd_dict[ark] = open_like_kaldi(ark, "rb")
+        fd = fd_dict[ark]
         return _load_mat(fd, offset, slices, endian=endian)
+    else:
+        with open_like_kaldi(ark, "rb") as fd:
+            return _load_mat(fd, offset, slices, endian=endian)
 
 
 def _parse_arkpath(ark_name):
@@ -239,7 +260,7 @@ def _parse_arkpath(ark_name):
 
     """
 
-    if ark_name.rstrip()[-1] == "|" or ark_name.rstrip()[0] == "|":
+    if ark_name.strip()[-1] == "|" or ark_name.strip()[0] == "|":
         # Something like: "| cat foo" or "cat bar|" shouldn't be parsed
         return ark_name, None, None
 

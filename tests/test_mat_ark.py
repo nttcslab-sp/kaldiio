@@ -29,7 +29,8 @@ def test_read_arks(fname):
 )
 @pytest.mark.parametrize("endian", ["<", ">"])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_write_read(tmpdir, shape1, shape2, endian, dtype):
+@pytest.mark.parametrize("max_cache_fd", [0, 3])
+def test_write_read(tmpdir, shape1, shape2, endian, dtype, max_cache_fd):
     path = tmpdir.mkdir("test")
 
     a = np.random.rand(*shape1).astype(dtype)
@@ -45,7 +46,9 @@ def test_write_read(tmpdir, shape1, shape2, endian, dtype):
     d2 = {k: v for k, v in kaldiio.load_ark(path.join("a.ark").strpath, endian=endian)}
     d5 = {
         k: v
-        for k, v in kaldiio.load_scp(path.join("b.scp").strpath, endian=endian).items()
+        for k, v in kaldiio.load_scp(
+            path.join("b.scp").strpath, endian=endian, max_cache_fd=max_cache_fd
+        ).items()
     }
     with io.open(path.join("a.ark").strpath, "rb") as fd:
         d6 = {k: v for k, v in kaldiio.load_ark(fd, endian=endian)}
