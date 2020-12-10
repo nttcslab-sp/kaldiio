@@ -265,14 +265,23 @@ def _parse_arkpath(ark_name):
         return ark_name, None, None
 
     slices = None
-    if ":" in ark_name:
-        fname, offset = ark_name.split(":", 1)
-        if "[" in offset and "]" in offset:
-            offset, Range = offset.split("[")
-            # Range = [3:6,  10:30]
-            Range = Range.replace("]", "").strip()
+    if "[" in ark_name and "]" in ark_name:
+        _ark_name, Range = ark_name.split("[")
+        Range = Range.replace("]", "").strip()
+        try:
             slices = _convert_to_slice(Range)
-        offset = int(offset)
+        except Exception:
+            pass
+        else:
+            ark_name = _ark_name
+
+    if ":" in ark_name:
+        fname, offset = ark_name.rsplit(":", 1)
+        try:
+            offset = int(offset)
+        except TypeError:
+            fname = ark_name
+            offset = None
     else:
         fname = ark_name
         offset = None
