@@ -279,7 +279,7 @@ def _parse_arkpath(ark_name):
         fname, offset = ark_name.rsplit(":", 1)
         try:
             offset = int(offset)
-        except TypeError:
+        except ValueError:
             fname = ark_name
             offset = None
     else:
