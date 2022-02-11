@@ -115,6 +115,12 @@ The followings are **not supported**
       - Maybe not enough maintained now.
    - https://github.com/t13m/kaldi-readers-for-tensorflow
       - Ark reader for tensorflow
+   - https://github.com/csukuangfj/kaldi_native_io
+      - Implemented in C++
+      - Have interface for Python
+      - Support all types of `rspecifier` and `wspecifier`
+      - Have a uniform interface for writing, sequential reading, and random access reading
+      - `pip install kaldi_native_io`
 - Pure Python
    - https://github.com/vesis84/kaldi-io-for-python
       - `kaldiio` is based on this module, but `kaldiio` supports more features than it.
