@@ -1,3 +1,4 @@
+from __future__ import division
 from __future__ import unicode_literals
 
 import codecs
@@ -16,6 +17,7 @@ import numpy as np
 from kaldiio.compression_header import GlobalHeader
 from kaldiio.compression_header import PerColHeader
 from kaldiio.utils import LazyLoader
+from kaldiio.utils import LimitedSizeDict
 from kaldiio.utils import MultiFileDescriptor
 from kaldiio.utils import default_encoding
 from kaldiio.utils import open_like_kaldi
@@ -56,7 +58,7 @@ else:
         return int(codecs.encode(s, "hex"), 16)
 
 
-def load_scp(fname, endian="<", separator=None, segments=None):
+def load_scp(fname, endian="<", separator=None, segments=None, max_cache_fd=0):
     """Lazy loader for kaldi scp file.
 
     Args:
@@ -66,8 +68,16 @@ def load_scp(fname, endian="<", separator=None, segments=None):
         segments (str): The path of segments
     """
     assert endian in ("<", ">"), endian
+
+    if max_cache_fd != 0:
+        if segments is not None:
+            raise ValueError("max_cache_fd is not supported for segments mode")
+        d = LimitedSizeDict(max_cache_fd)
+    else:
+        d = None
+
     if segments is None:
-        load_func = partial(load_mat, endian=endian)
+        load_func = partial(load_mat, endian=endian, fd_dict=d)
         loader = LazyLoader(load_func)
         with open_like_kaldi(fname, "r") as fd:
             for line in fd:
@@ -211,11 +221,23 @@ class SegmentsExtractor(Mapping):
             return rate, array[int(st * rate) :]
 
 
-def load_mat(ark_name, endian="<"):
+def load_mat(ark_name, endian="<", fd_dict=None):
     assert endian in ("<", ">"), endian
+    if fd_dict is not None and not isinstance(fd_dict, Mapping):
+        raise RuntimeError(
+            "fd_dict must be dict or None, bot got {}".format(type(fd_dict))
+        )
+
     ark, offset, slices = _parse_arkpath(ark_name)
-    with open_like_kaldi(ark, "rb") as fd:
+
+    if fd_dict is not None and not (ark.strip()[-1] == "|" or ark.strip()[0] == "|"):
+        if ark not in fd_dict:
+            fd_dict[ark] = open_like_kaldi(ark, "rb")
+        fd = fd_dict[ark]
         return _load_mat(fd, offset, slices, endian=endian)
+    else:
+        with open_like_kaldi(ark, "rb") as fd:
+            return _load_mat(fd, offset, slices, endian=endian)
 
 
 def _parse_arkpath(ark_name):
@@ -237,19 +259,28 @@ def _parse_arkpath(ark_name):
 
     """
 
-    if ark_name.rstrip()[-1] == "|" or ark_name.rstrip()[0] == "|":
+    if ark_name.strip()[-1] == "|" or ark_name.strip()[0] == "|":
         # Something like: "| cat foo" or "cat bar|" shouldn't be parsed
         return ark_name, None, None
 
     slices = None
-    if ":" in ark_name:
-        fname, offset = ark_name.split(":", 1)
-        if "[" in offset and "]" in offset:
-            offset, Range = offset.split("[")
-            # Range = [3:6,  10:30]
-            Range = Range.replace("]", "").strip()
+    if "[" in ark_name and "]" in ark_name:
+        _ark_name, Range = ark_name.split("[")
+        Range = Range.replace("]", "").strip()
+        try:
             slices = _convert_to_slice(Range)
-        offset = int(offset)
+        except Exception:
+            pass
+        else:
+            ark_name = _ark_name
+
+    if ":" in ark_name:
+        fname, offset = ark_name.rsplit(":", 1)
+        try:
+            offset = int(offset)
+        except ValueError:
+            fname = ark_name
+            offset = None
     else:
         fname = ark_name
         offset = None
@@ -604,7 +635,7 @@ def _read_length_header(fd):
 
 def _write_length_header(fd, length_):
     bit_length = length_.bit_length()
-    bytes_length = math.ceil(bit_length / 8)
+    bytes_length = int(math.ceil(bit_length / 8))
     fd.write(struct.pack("<B", bytes_length))
     fd.write(to_bytes(length_, bytes_length))
     return 1 + bytes_length
@@ -716,7 +747,7 @@ def save_ark(
 
                         soundfile.write(_fd, _array, _rate, **write_kwargs)
                         fd.write(b"AUDIO")
-                        buf = _fd.getbuffer()
+                        buf = _fd.getvalue()
                         # Write the information for the length
                         bytes_length = _write_length_header(fd, len(buf))
                         fd.write(buf)
@@ -742,7 +773,7 @@ def save_ark(
                         np.save(_fd, data, **write_kwargs)
 
                         fd.write(b"NPY")
-                        buf = _fd.getbuffer()
+                        buf = _fd.getvalue()
 
                         # Write the information for the length
                         bytes_length = _write_length_header(fd, len(buf))

@@ -64,11 +64,11 @@ The first column, `uttid1`, indicates the utterance id and the second, `/some/wh
 
 1. Unix command can be used insead of direct file path
 
-    For example, the following file is equivalent to the first scp.
+    For example, the following scp file can be also used.
 
-        uttid1 cat /some/where/feats.ark:123 |
-        uttid2 cat /some/where/feats.ark:156 |
-        uttid3 cat /some/where/feats.ark:245 |
+        uttid1 cat /some/where/feats1.mat |
+        uttid2 cat /some/where/feats2.mat |
+        uttid3 cat /some/where/feats3.mat |
 
 #### wav.scp
 `wav.scp` is a `scp` to describe wave file paths.
@@ -98,6 +98,8 @@ Kaldiio supports:
   - Binary/Text for Int-vector, typically used for `ali` files.
 - Read/Write via a pipe: e.g. "ark: cat feats.ark |"
 - Read wav.scp / wav.ark
+- (New!) Some extended ark format **not supported** in Kaldi originally.
+  - The ark file for numpy, pickle, wav, flac files.
 
 The followings are **not supported**
 
@@ -238,6 +240,32 @@ from kaldiio import WriteHelper
 with WriteHelper('ark:-') as writer:
     for i in range(10):
         writer(str(i), numpy.random.randn(10, 10))
+```
+
+
+- (New!) Extended ark format using numpy, pickle, soundfile
+
+```python
+import numpy
+from kaldiio import WriteHelper
+
+# NPY ARK
+with WriteHelper('ark:-', write_function="numpy") as writer:
+    writer("foo", numpy.random.randn(10, 10))
+
+# PICKLE ARK
+with WriteHelper('ark:-', write_function="pickle") as writer:
+    writer("foo", numpy.random.randn(10, 10))
+    
+# FLAC ARK
+with WriteHelper('ark:-', write_function="soundfile_flac") as writer:
+    writer("foo", numpy.random.randn(1000))
+```
+
+Note that `soundfile` is an optional module and you need to install it to use this feature.
+
+```sh
+pip install soundfile
 ```
 
 ## More low level API
