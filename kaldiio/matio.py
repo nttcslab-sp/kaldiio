@@ -38,7 +38,6 @@ if PY3:
     def from_bytes(s, endianess="little"):
         return int.from_bytes(s, endianess)
 
-
 else:
     from collections import Mapping
 
@@ -337,7 +336,7 @@ def read_token(fd):
     return decoded
 
 
-def read_kaldi(fd, endian="<", audio_loader="soundfile"):
+def read_kaldi(fd, endian="<", audio_loader="soundfile", load_kwargs=None):
     """Load kaldi
 
     Args:
@@ -346,6 +345,8 @@ def read_kaldi(fd, endian="<", audio_loader="soundfile"):
         audio_loader: (Union[str, callable]):
     """
     assert endian in ("<", ">"), endian
+    if load_kwargs is None:
+        load_kwargs = {}
 
     max_flag_length = len(b"AUDIO")
 
@@ -366,11 +367,11 @@ def read_kaldi(fd, endian="<", audio_loader="soundfile"):
         length_ = _read_length_header(fd)
         buf = fd.read(length_)
         _fd = BytesIO(buf)
-        array = np.load(_fd)
+        array = np.load(_fd, **load_kwargs)
 
     elif binary_flag[:3] == b"PKL":
         fd.read(3)
-        array = pickle.load(fd)
+        array = pickle.load(fd, **load_kwargs)
 
     elif binary_flag[:5] == b"AUDIO":
         fd.read(5)
@@ -385,7 +386,7 @@ def read_kaldi(fd, endian="<", audio_loader="soundfile"):
         else:
             raise ValueError("Not supported: audio_loader={}".format(audio_loader))
 
-        x1, x2 = audio_loader(_fd)
+        x1, x2 = audio_loader(_fd, **load_kwargs)
 
         # array: Tuple[int, np.ndarray] according to scipy wav read
         if isinstance(x1, int) and isinstance(x2, np.ndarray):
@@ -618,6 +619,7 @@ def save_ark(
     endian="<",
     compression_method=None,
     write_function=None,
+    write_kwargs=None,
 ):
     """Write ark
 
@@ -631,7 +633,11 @@ def save_ark(
         endian (str):
         compression_method (int):
         write_function: (str):
+        write_kwargs: (Optional[dict]):
     """
+    if write_kwargs is None:
+        write_kwargs = {}
+
     if isinstance(ark, string_types):
         seekable = True
     # Maybe, never match with this
@@ -672,15 +678,8 @@ def save_ark(
                 # Ignore case
                 write_function = write_function.lower()
 
-                if write_function.startswith("soundfile"):
+                if write_function == "soundfile":
                     import soundfile
-
-                    if "flac" in write_function:
-                        audio_format = "flac"
-                    elif "wav" in write_function:
-                        audio_format = "wav"
-                    else:
-                        audio_format = "wav"
 
                     def _write_function(fd, data):
                         if not isinstance(data, (list, tuple)):
@@ -696,12 +695,12 @@ def save_ark(
                         _fd = BytesIO()
 
                         if isinstance(data[0], np.ndarray) and isinstance(data[1], int):
-                            soundfile.write(_fd, data[0], data[1], format=audio_format)
+                            _array, _rate = data
 
                         elif isinstance(data[1], np.ndarray) and isinstance(
                             data[0], int
                         ):
-                            soundfile.write(_fd, data[1], data[0], format=audio_format)
+                            _rate, _array = data
                         else:
                             raise ValueError(
                                 "Expected Tuple[int, np.ndarray] or "
@@ -710,6 +709,12 @@ def save_ark(
                                     type(data[0]), type(data[1])
                                 )
                             )
+
+                        # By default, save as wav
+                        if "format" not in write_kwargs:
+                            write_kwargs["format"] = "wav"
+
+                        soundfile.write(_fd, _array, _rate, **write_kwargs)
                         fd.write(b"AUDIO")
                         buf = _fd.getbuffer()
                         # Write the information for the length
@@ -724,7 +729,7 @@ def save_ark(
 
                         fd.write(b"PKL")
                         _fd = BytesIO()
-                        pickle.dump(data, _fd)
+                        pickle.dump(data, _fd, **write_kwargs)
                         buf = _fd.getbuffer()
                         fd.write(buf)
                         return len(buf) + len("PKL")
@@ -734,7 +739,7 @@ def save_ark(
                     def _write_function(fd, data):
                         # Write numpy file in BytesIO
                         _fd = BytesIO()
-                        np.save(_fd, data)
+                        np.save(_fd, data, **write_kwargs)
 
                         fd.write(b"NPY")
                         buf = _fd.getbuffer()

@@ -98,7 +98,6 @@ if PY3:
         else:
             raise TypeError("Unsupported mode == {}".format(mode))
 
-
 else:
     my_popen = os.popen
 
