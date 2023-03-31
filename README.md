@@ -1,7 +1,6 @@
 # Kaldiio
 [![pypi](https://img.shields.io/pypi/v/kaldiio.svg)](https://pypi.python.org/pypi/kaldiio)
 [![Supported Python versions](https://img.shields.io/pypi/pyversions/kaldiio.svg)](https://pypi.python.org/pypi/kaldiio)
-[![Build Status](https://travis-ci.com/nttcslab-sp/kaldiio.svg?branch=master)](https://travis-ci.com/nttcslab-sp/kaldiio)
 [![codecov](https://codecov.io/gh/nttcslab-sp/kaldiio/branch/master/graph/badge.svg)](https://codecov.io/gh/nttcslab-sp/kaldiio)
 
 A pure python module for reading and writing kaldi ark files
