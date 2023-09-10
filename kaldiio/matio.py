@@ -393,6 +393,12 @@ def read_kaldi(fd, endian="<", audio_loader="soundfile", load_kwargs=None):
         # array: Tuple[int, np.ndarray]
         array = read_wav(fd)
 
+    elif binary_flag[:4] == b"fLaC":
+        import soundfile
+        buf = fd.read()
+        _fd = BytesIO(buf)
+        audio, rate = soundfile.read(_fd)
+        array = (rate, audio,)
     elif binary_flag[:3] == b"NPY":
         fd.read(3)
         length_ = _read_length_header(fd)
