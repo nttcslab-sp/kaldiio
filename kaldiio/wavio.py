@@ -1,7 +1,7 @@
 import numpy as np
 import wave
 
-import kadiio.python_wave as wave
+import kadliio.python_wave as wave
 
 def read_wav(fd, return_size=False):
     wd = wave.open(fd)
