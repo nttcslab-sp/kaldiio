@@ -1,10 +1,10 @@
 import audioop
-from chunk import Chunk
 from collections import namedtuple
 import struct
 import sys
 import warnings
 
+import kaldiio.chunk import Chunk
 
 """
 This file is copied from Python3.7 wavfilea and modified
