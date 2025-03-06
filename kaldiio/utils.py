@@ -478,7 +478,7 @@ class LazyLoader(MutableMapping):
         try:
             return self._loader(ark_name)
         except Exception:
-            warnings.warn('An error happens at loading "{}"'.format(ark_name))
+            warnings.warn('An error happend when loading "{}"'.format(ark_name))
             raise
 
     def __setitem__(self, key, value):
