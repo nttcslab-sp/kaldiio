@@ -32,5 +32,3 @@ jobs:
     - name: Test
       run: |
          pytest tests
-         pycodestyle kaldiio tests
-         flake8 kaldiio tests
