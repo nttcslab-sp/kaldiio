@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 import numpy as np
 
-import kaldiio.python_wave as wave
+import wave
 
 
 def read_wav(fd, return_size=False):
