@@ -1,6 +1,3 @@
-# flake8: noqa F401
-import pkg_resources
-
 from kaldiio.matio import load_ark
 from kaldiio.matio import load_mat
 from kaldiio.matio import load_scp
@@ -13,8 +10,4 @@ from kaldiio.highlevel import WriteHelper
 from kaldiio.utils import open_like_kaldi
 from kaldiio.utils import parse_specifier
 
-try:
-    __version__ = pkg_resources.get_distribution("kaldiio").version
-except Exception:
-    __version__ = None
-del pkg_resources
+__version__ = "2.18.1"
